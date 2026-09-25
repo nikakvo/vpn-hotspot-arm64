@@ -120,15 +120,28 @@ The dashboard reads only what the watchdog already wrote — opening it costs no
 
 ## The networking set
 
-Three modules built to work together — each in its own colour; install any of them alone, or all three:
+Three modules built to work together — each one works on its own, and each adds a layer for the phone **and everyone on its hotspot**:
 
-| Module | |
-|---|---|
-| [DNSCrypt Proxy Arm64](https://github.com/nikakvo/dnscrypt-proxy-android-arm64-only) | Encrypted, filtered DNS — for the phone and hotspot devices |
-| [ipset-arm64](https://github.com/nikakvo/ipset-arm64) | IP blocklists — for the phone and hotspot devices |
-| **VPN Hotspot Arm64** | Hotspot devices through the VPN |
+| | Module | What it adds |
+|---|---|---|
+| 🟢 | [DNSCrypt Proxy Arm64](https://github.com/nikakvo/dnscrypt-proxy-android-arm64-only) | Encrypted DNS with ad / tracker blocklists — for the phone and for hotspot devices, even those with their own DNS server set |
+| 🔵 | [ipset-arm64](https://github.com/nikakvo/ipset-arm64) | IP blocklists (FireHOL, Spamhaus) in the kernel — stops apps and devices that connect to hard-coded IP addresses, which DNS blocking cannot see |
+| 🟡 | **VPN Hotspot Arm64** *(this module)* | Sends hotspot, USB and Bluetooth devices through the phone's VPN, with kill switch — Android's VPN only covers the phone's own apps |
 
-The firewall order is fixed and checked on every pass: DNSCrypt's hotspot filter, then ipset, then this module's tunnel rules, then Android's. A device can never reach the tunnel around the two filters. With DNSCrypt installed, devices' DNS is answered by DNSCrypt, whose own queries go through the VPN; without it (or while it is paused) devices' DNS goes to the fallback server through the tunnel — never to your carrier.
+```
+device on your hotspot  /  app on the phone
+   │  DNS      → DNSCrypt Proxy   encrypted, filtered
+   │  traffic  → ipset            listed networks dropped
+   ▼  hotspot  → VPN Hotspot      into your VPN (kill switch)
+internet
+```
+
+- **Order is fixed and checked** by each module: DNSCrypt's hotspot filter → ipset → VPN Hotspot → Android. Nothing reaches the VPN around the two filters
+- **With all three**, hotspot devices get your filtered DNS (DNSCrypt's own queries travel inside the VPN), your IP blocklists and your VPN exit — on Wi-Fi and on mobile data
+- **VPN apps stay happy** — none of the three holds Android's firewall lock while checking, so WireGuard (`wg-quick`) and other VPN apps connect and disconnect without errors
+- **On its own** it sends hotspot devices through the VPN with the kill switch; their DNS goes to a fallback server (Quad9) through the tunnel, without blocklists.
+
+**Tested together** on a Poco F6 Pro (vermeer), Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU) (SukiSU Ultra), with WireGuard (kernel backend) and v2rayNG; hotspot devices: a Windows laptop and a stock Android phone. Other devices should work but are not tested — reports welcome.
 
 ---
 
