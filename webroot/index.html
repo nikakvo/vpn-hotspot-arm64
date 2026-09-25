@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>VPN Hotspot</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- Non-blocking font: the page must work with no internet at all -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
+  <style>
+    /* Same house style as DNSCrypt Proxy Arm64 and ipset-arm64 (one set);
+       this module's own colour is neon yellow (cyberpunk), warnings orange.
+       Sibling rows keep their own colours (green, blue). */
+    :root {
+      --acc:    #fcee0a;
+      --acc-a:  rgba(252,238,10,0.45);
+      --acc-t:  rgba(252,238,10,0.07);
+      --amber:  #ff6a1f;
+      --red:    #ff4455;
+      --dnsc:   #00ff88;
+      --ipset:  #00aaff;
+      --border: #2c2908;
+      --line:   #18160a;
+      --muted:  #8a8452;
+      --text:   #ece7c8;
+      --dim:    #060500;
+      --panel:  #0c0b03;
+      --mono:   'Share Tech Mono', ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body { background: #000; font-family: var(--mono); color: var(--text); display: flex; flex-direction: column; overflow: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(252,238,10,0.02) 2px, rgba(252,238,10,0.02) 4px);
+    }
+    button, input { font-family: var(--mono); }
+    :focus-visible { outline: 1px solid var(--acc); outline-offset: 2px; }
+
+    /* header */
+    header { padding: 6px 8px; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); background: #070600; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+    .hdr-top { display: flex; align-items: baseline; gap: 8px; }
+    .htitle { font-size: clamp(11px, 3vw, 14px); color: var(--acc); letter-spacing: 1.5px; text-transform: uppercase; }
+    #hdr-ver { flex: 1; font-size: 9px; color: var(--muted); letter-spacing: .5px; }
+    #clock { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    a.button { --nb: var(--acc); padding: 7px 0; color: var(--acc); border: 1px solid var(--acc); text-decoration: none; font-size: clamp(9px, 2.8vw, 11px); letter-spacing: .5px; white-space: nowrap; text-transform: uppercase; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+    a.button:active { background: var(--acc); color: #000; }
+    a.button.alt { --nb: var(--muted); border-color: var(--muted); color: var(--muted); }
+
+    /* banner */
+    #busy-bar { position: relative; height: 2px; overflow: hidden; flex-shrink: 0; }
+    #busy-bar::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 40%; background: var(--acc); opacity: 0; }
+    #busy-bar.on::after { opacity: .9; animation: busySlide 1s linear infinite; }
+    @keyframes busySlide { from { left: -40%; } to { left: 100%; } }
+    #banner { padding: 4px 12px; font-size: 10px; letter-spacing: .4px; text-align: center; border-bottom: 1px solid var(--border); flex-shrink: 0; background: #161400; color: var(--acc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #banner.b-warn { background: #1f0c00; color: var(--amber); }
+    #banner.b-error { background: #1a0005; color: var(--red); }
+    #banner.b-idle { background: var(--dim); color: var(--muted); }
+    .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: middle; animation: livePulse 1.4s ease-in-out infinite; }
+    #banner.b-idle .live-dot, #banner.b-error .live-dot { animation: none; }
+    @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+    /* cut corner: the set's shapes are square; this module's are clipped */
+    .clip { --nb: var(--border); position: relative; clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%); }
+    .clip::after { content: ''; position: absolute; top: 0; right: 0; width: 9px; height: 9px; pointer-events: none;
+      background: linear-gradient(to bottom left, transparent calc(50% - 0.8px), var(--nb) calc(50% - 0.8px), var(--nb) calc(50% + 0.8px), transparent calc(50% + 0.8px)); }
+    .glitch { text-shadow: 1.5px 0 rgba(255,0,90,.55), -1.5px 0 rgba(0,235,255,.45); }
+
+    /* route strip: the one thing this page is about */
+    .route { display: grid; grid-template-columns: 1fr 34px 1.25fr 34px 1fr; align-items: center; padding: 14px 12px 12px; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
+    .node { --nb: var(--border); border: 1px solid var(--nb); padding: 7px 6px; text-align: center; min-width: 0; }
+    .node .n1 { font-size: clamp(10px, 3vw, 13px); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .node .n2 { font-size: 8.5px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .node.on { --nb: var(--acc-a); background: var(--acc-t); }
+    .node.on .n1 { color: var(--acc); }
+    .node.warn { --nb: rgba(255,106,31,.45); }
+    .node.warn .n1 { color: var(--amber); }
+    .node.off { opacity: .45; }
+    .link { position: relative; height: 12px; }
+    .link::before { content: ''; position: absolute; left: 2px; right: 2px; top: 5px; height: 2px; background: var(--border); }
+    .link.flow::before { background: repeating-linear-gradient(90deg, var(--acc) 0 6px, transparent 6px 10px); background-size: 20px 2px; animation: flow 0.9s linear infinite; filter: drop-shadow(0 0 3px var(--acc)); }
+    .link.plain::before { background: var(--amber); }
+    .link.cut::before { background: var(--red); left: 2px; right: 55%; }
+    .link.cut::after { content: '✕'; position: absolute; left: 45%; top: -4px; color: var(--red); font-size: 13px; }
+    @keyframes flow { from { background-position: 0 0; } to { background-position: 20px 0; } }
+    @media (prefers-reduced-motion: reduce) { .link.flow::before, .live-dot, #busy-bar.on::after { animation: none; } }
+
+    /* stats */
+    .stats { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sc { flex: 1; padding: 6px 8px; background: var(--dim); display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .sc .lbl { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc .val { font-size: clamp(12px, 3.4vw, 18px); color: var(--acc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .val.a, .v.a { color: var(--amber) !important; } .val.r, .v.r { color: var(--red) !important; } .val.m, .v.m { color: var(--muted) !important; }
+
+    /* tabs / panes */
+    .tabs { display: flex; border-bottom: 1px solid var(--border); background: #040300; flex-shrink: 0; }
+    .tab { flex: 1; padding: 9px 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; cursor: pointer; }
+    .tab.active { color: var(--acc); border-bottom-color: var(--acc); }
+    .tab .tab-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 5px; vertical-align: middle; }
+    .tab .tab-dot.bad { background: var(--red); } .tab .tab-dot.warn { background: var(--amber); }
+    main { flex: 1; min-height: 0; position: relative; }
+    .pane { position: absolute; inset: 0; overflow-y: auto; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px); display: none; -webkit-overflow-scrolling: touch; }
+    .pane.active { display: block; }
+    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .section { border-bottom: 1px solid var(--border); padding: 12px 14px 14px; }
+    .section-title { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 7px; }
+    .section-title .s-accent { display: inline-block; width: 3px; height: 10px; border-radius: 1px; background: var(--acc); }
+    .section-title .s-note { margin-left: auto; text-transform: none; letter-spacing: .3px; font-size: 8px; }
+    .d-stat { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 10px; }
+    .d-stat:last-child { border-bottom: none; }
+    .d-stat .k { color: var(--muted); white-space: nowrap; }
+    .d-stat .v { color: var(--acc); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty { padding: 16px 0; text-align: center; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .note { font-size: 9px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+    .note b { color: var(--text); font-weight: normal; }
+
+    .row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 10px; }
+    .row:last-child { border-bottom: none; }
+    .row .rn { flex: 1; min-width: 0; }
+    .row .rn b { display: block; color: var(--text); font-weight: normal; font-size: 11px; }
+    .row .rn span { display: block; color: var(--muted); font-size: 9px; margin-top: 2px; line-height: 1.45; }
+    .pill { flex-shrink: 0; font-size: 8px; letter-spacing: .8px; padding: 2px 7px; border-radius: 2px; border: 1px solid; text-transform: uppercase; }
+    .pill.ok   { color: var(--acc);   border-color: var(--acc-a); background: var(--acc-t); }
+    .pill.warn { color: var(--amber); border-color: rgba(255,106,31,.45); background: rgba(255,106,31,.08); }
+    .pill.bad  { color: var(--red);   border-color: rgba(255,68,85,.45); background: rgba(255,68,85,.08); }
+    .pill.skip { color: var(--muted); border-color: var(--border); }
+    .pill.dnsc { color: var(--dnsc);  border-color: rgba(0,255,136,.35); background: rgba(0,255,136,.06); }
+    .pill.ipset { color: var(--ipset); border-color: rgba(0,170,255,.4); background: rgba(0,170,255,.06); }
+    .sib { border-left: 2px solid; padding-left: 9px; }
+    .sib.dnsc { border-color: var(--dnsc); } .sib.ipset { border-color: var(--ipset); }
+    .sib.dnsc b { color: var(--dnsc) !important; } .sib.ipset b { color: var(--ipset) !important; }
+
+    /* exit */
+    .exit-box { display: flex; align-items: center; gap: 10px; }
+    #exit-out { flex: 1; min-width: 0; }
+    #exit-ip { font-size: clamp(14px, 4.4vw, 20px); color: var(--acc); letter-spacing: .5px; }
+    #exit-sub { font-size: 9px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+    .btn-s { --nb: var(--acc-a); background: var(--acc-t); border: 1px solid var(--acc-a); color: var(--acc); font-size: 10px; letter-spacing: .8px; text-transform: uppercase; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+    .btn-s.m { --nb: var(--border); background: transparent; border-color: var(--border); color: var(--muted); }
+    .btn-s.r { border-color: rgba(255,68,85,.45); color: var(--red); }
+    .btn-s:disabled { opacity: .4; }
+
+    /* devices */
+    .dev { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 10px; align-items: center; }
+    .dev:last-child { border-bottom: none; }
+    .dev .ic { grid-row: span 2; width: 26px; height: 26px; border: 1px solid var(--acc-a); border-radius: 3px; display: flex; align-items: center; justify-content: center; color: var(--acc); font-size: 12px; }
+    .dev .ip { color: var(--text); font-size: 12px; }
+    .dev .mac { color: var(--muted); font-size: 9px; }
+    .dev .ifc { grid-row: span 2; color: var(--muted); font-size: 9px; text-align: right; }
+
+    /* settings */
+    .sw { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sw i { position: absolute; inset: 0; border: 1px solid var(--muted); border-radius: 10px; cursor: pointer; transition: .2s; }
+    .sw i::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; border-radius: 50%; background: var(--muted); transition: .2s; }
+    .sw input:checked + i { border-color: var(--acc-a); background: var(--acc-t); }
+    .sw input:checked + i::before { transform: translateX(18px); background: var(--acc); }
+    .sw input:focus-visible + i { outline: 1px solid var(--acc); outline-offset: 2px; }
+    .sw.busy { opacity: .4; pointer-events: none; }
+    .seg { display: flex; margin-top: 8px; }
+    .seg button { flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 9px; padding: 8px 4px; margin-left: -1px; text-transform: uppercase; letter-spacing: .8px; cursor: pointer; }
+    .seg button:first-child { border-radius: 2px 0 0 2px; margin-left: 0; }
+    .seg button:last-child { border-radius: 0 2px 2px 0; }
+    .seg button.on { color: var(--acc); border-color: var(--acc-a); background: var(--acc-t); position: relative; z-index: 1; }
+    .inrow { display: flex; gap: 6px; margin-top: 8px; }
+    .inrow input { flex: 1; min-width: 0; background: #000; border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 8px; border-radius: 2px; }
+    .inrow.hidden { display: none; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .term { background: var(--panel); border: 1px solid var(--border); border-radius: 3px; padding: 8px 10px; font-size: 9px; color: var(--text); overflow: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; margin-top: 10px; max-height: 50vh; }
+    .term.hidden { display: none; }
+
+    /* log */
+    #tab-log { display: none; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+    #tab-log.active { display: flex; }
+    .log-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 8px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .fbtn { padding: 3px 7px; background: transparent; border: 1px solid var(--border); border-radius: 2px; font-size: 9px; color: var(--muted); cursor: pointer; }
+    .fbtn.on.INFO { color: var(--acc); border-color: var(--acc-a); }
+    .fbtn.on.WARN { color: var(--amber); border-color: rgba(255,106,31,.45); }
+    .fbtn.on.ERROR { color: var(--red); border-color: rgba(255,68,85,.45); }
+    #log-count { margin-left: auto; font-size: 9px; color: var(--muted); }
+    #log-body { flex: 1; min-height: 0; margin: 0; border: none; border-radius: 0; max-height: none; padding: 8px 10px calc(env(safe-area-inset-bottom, 0px) + 36px); font-size: 9.5px; }
+    .ll { display: block; } .ll .t { color: var(--muted); }
+    .ll.INFO .m { color: var(--text); } .ll.WARN .m { color: var(--amber); } .ll.ERROR .m { color: var(--red); }
+
+    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 4px 12px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); background: var(--dim); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 9px; color: var(--muted); gap: 6px; z-index: 100; }
+    #foot-info { flex: 1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 36px); transform: translateX(-50%) translateY(10px); opacity: 0; transition: all .25s; background: #121003; border: 1px solid var(--border); color: var(--text); font-size: 10px; padding: 8px 14px; border-radius: 3px; pointer-events: none; z-index: 200; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.ok { border-color: var(--acc-a); color: var(--acc); } .toast.err { border-color: rgba(255,68,85,.5); color: var(--red); }
+    button { transition: transform .08s, filter .08s; }
+    button:active:not(:disabled) { transform: scale(.95); filter: brightness(1.5); }
+    button.working { animation: btnPulse .9s ease-in-out infinite; pointer-events: none; }
+    @keyframes btnPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+    body.locked button:not(.tab):not(.fbtn):not(.working), body.locked label.sw { opacity: .5; }
+    .fatal { margin: 30px 14px; padding: 16px; border: 1px solid rgba(255,68,85,.5); background: #1a0005; color: var(--red); font-size: 10px; line-height: 1.7; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-top">
+    <div class="htitle glitch">⬡ VPN Hotspot</div>
+    <div id="hdr-ver"></div>
+    <div id="clock">--:--:--</div>
+  </div>
+  <div class="btn-grid">
+    <a class="button clip" href="https://www.dnsleaktest.com/" target="_blank">DNS Test</a>
+    <a class="button clip" href="https://ipleak.net/" target="_blank">Leak Test</a>
+    <a class="button alt clip" href="help.html">Help</a>
+  </div>
+</header>
+
+<div id="busy-bar"></div>
+<div id="banner" class="b-idle"><span class="live-dot"></span>Connecting…</div>
+
+<div class="route" id="route" aria-label="Where hotspot traffic goes">
+  <div class="node clip off" id="rn-cli"><div class="n1">Clients</div><div class="n2" id="rn-cli2">—</div></div>
+  <div class="link" id="rl-1"></div>
+  <div class="node clip off" id="rn-vpn"><div class="n1" id="rn-vpn1">VPN</div><div class="n2" id="rn-vpn2">—</div></div>
+  <div class="link" id="rl-2"></div>
+  <div class="node clip off" id="rn-net"><div class="n1">Internet</div><div class="n2" id="rn-net2">—</div></div>
+</div>
+
+<div class="stats">
+  <div class="sc"><div class="lbl">State</div><div class="val" id="s-state">—</div></div>
+  <div class="sc"><div class="lbl">Devices</div><div class="val" id="s-dev">—</div></div>
+  <div class="sc"><div class="lbl">Kill switch</div><div class="val" id="s-ks">—</div></div>
+  <div class="sc"><div class="lbl">Client DNS</div><div class="val" id="s-dns">—</div></div>
+</div>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="dash" onclick="showTab('dash')">Dashboard<span class="tab-dot" id="dash-dot"></span></button>
+  <button class="tab" data-tab="dev" onclick="showTab('dev')">Devices</button>
+  <button class="tab" data-tab="set" onclick="showTab('set')">Settings</button>
+  <button class="tab" data-tab="log" onclick="showTab('log')">Log</button>
+</nav>
+
+<main>
+  <!-- ═════════════ DASHBOARD ═════════════ -->
+  <div class="pane active" id="tab-dash">
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Exit<span class="s-note" id="exit-note">what websites see</span></div>
+      <div class="exit-box">
+        <div id="exit-out"><div id="exit-ip" class="glitch v m">—</div><div id="exit-sub">Tap Check to ask an IP service (one small request through the VPN).</div></div>
+        <button class="btn-s clip" id="exit-btn" onclick="checkExit()">Check</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Tunnel</div>
+      <div class="d-stat"><span class="k">Interface</span><span class="v" id="t-if">—</span></div>
+      <div class="d-stat"><span class="k">Answers</span><span class="v" id="t-health">—</span></div>
+      <div class="d-stat"><span class="k">Routing table</span><span class="v" id="t-table">—</span></div>
+      <div class="d-stat"><span class="k">MTU / TCP MSS</span><span class="v" id="t-mtu">—</span></div>
+      <div class="d-stat"><span class="k">Hotspot</span><span class="v" id="t-teth">—</span></div>
+      <div class="d-stat"><span class="k">In this state for</span><span class="v" id="t-since">—</span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Protection<span class="s-note" id="prot-note"></span></div>
+      <div id="prot-body"><div class="empty">Waiting for data…</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Networking set</div>
+      <div id="set-body"></div>
+      <div class="note">Order in the firewall is fixed: DNSCrypt and ipset filter a device first, then it is sent into the tunnel. Nothing here can bypass them.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Watchdog</div>
+      <div class="d-stat"><span class="k">Running</span><span class="v" id="w-run">—</span></div>
+      <div class="d-stat"><span class="k">Network events</span><span class="v" id="w-ev">—</span></div>
+      <div class="d-stat"><span class="k">Last check</span><span class="v" id="w-tick">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═════════════ DEVICES ═════════════ -->
+  <div class="pane" id="tab-dev">
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Connected<span class="s-note" id="dev-note"></span></div>
+      <div id="dev-body"><div class="empty">Waiting for data…</div></div>
+      <div class="note">Wi-Fi devices come from the hotspot's own list; USB and Bluetooth tethering from the phone's neighbour table.</div>
+    </div>
+  </div>
+
+  <!-- ═════════════ SETTINGS ═════════════ -->
+  <div class="pane" id="tab-set">
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Routing</div>
+      <div class="row">
+        <div class="rn"><b>Route hotspot through the VPN</b><span>Off: the module removes everything and tethering works as Android made it.</span></div>
+        <label class="sw" id="sw-en"><input type="checkbox" id="cb-en" onchange="setBool('ENABLED', this)"><i></i></label>
+      </div>
+      <div class="row">
+        <div class="rn"><b>Kill switch</b><span>No VPN → devices get no internet at all, never your mobile or Wi-Fi connection directly.</span></div>
+        <label class="sw" id="sw-ks"><input type="checkbox" id="cb-ks" onchange="setBool('KILL_SWITCH', this)"><i></i></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Tunnel</div>
+      <div class="row">
+        <div class="rn"><b>Detect a dead tunnel</b><span>Sending for 20 s with nothing coming back → one ping through the tunnel. No answer: the VPN counts as down (kill switch rules apply) until it answers again.</span></div>
+        <label class="sw" id="sw-tc"><input type="checkbox" id="cb-tc" onchange="setBool('TUNNEL_CHECK', this)"><i></i></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>VPN interface</div>
+      <div class="note" style="margin-top:0">Auto follows whatever VPN Android has connected (tun0, wg-…), including server switches. Pick an interface only if you run two VPNs.</div>
+      <div class="seg" id="vif-seg">
+        <button data-v="auto" onclick="vifMode('auto')">Auto</button>
+        <button data-v="manual" onclick="vifMode('manual')">Choose</button>
+      </div>
+      <div class="inrow hidden" id="vif-row">
+        <input id="vif-in" placeholder="e.g. tun0" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="15">
+        <button class="btn-s clip" onclick="saveVif()">Save</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Client DNS fallback</div>
+      <div class="note" style="margin-top:0">Used only when no local resolver takes the DNS (DNSCrypt missing or paused). Devices' DNS then goes to this server <b>through the tunnel</b>.</div>
+      <div class="seg" id="dns-seg">
+        <button data-v="9.9.9.9" onclick="setDns('9.9.9.9')">Quad9</button>
+        <button data-v="1.1.1.1" onclick="setDns('1.1.1.1')">Cloudflare</button>
+        <button data-v="custom" onclick="dnsCustom()">Other</button>
+      </div>
+      <div class="inrow hidden" id="dns-row">
+        <input id="dns-in" placeholder="IPv4 address" inputmode="decimal" autocomplete="off">
+        <button class="btn-s clip" onclick="setDns($('dns-in').value.trim())">Save</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="s-accent"></span>Maintenance</div>
+      <div class="actions">
+        <button class="btn-s clip" onclick="doSync(false)">Check now</button>
+        <button class="btn-s clip" onclick="doSync(true)">Rebuild</button>
+        <button class="btn-s clip m" onclick="doDiag()">Report</button>
+      </div>
+      <div class="note">Check now: compare the rules with what should be there and repair. Rebuild: put every rule back from scratch. Report: everything needed to troubleshoot, ready to copy.</div>
+      <pre class="term hidden" id="diag-out"></pre>
+      <div class="inrow hidden" id="diag-row"><button class="btn-s clip" style="flex:1" onclick="copyDiag()">Copy report</button></div>
+    </div>
+  </div>
+
+  <!-- ═════════════ LOG ═════════════ -->
+  <div class="pane" id="tab-log">
+    <div class="log-bar">
+      <button class="fbtn on INFO" data-l="INFO" onclick="toggleLvl(this)">Info</button>
+      <button class="fbtn on WARN" data-l="WARN" onclick="toggleLvl(this)">Warn</button>
+      <button class="fbtn on ERROR" data-l="ERROR" onclick="toggleLvl(this)">Error</button>
+      <span id="log-count"></span>
+    </div>
+    <pre class="term" id="log-body"></pre>
+  </div>
+</main>
+
+<footer>
+  <span id="foot-l">—</span>
+  <span id="foot-info"></span>
+  <span id="foot-r"></span>
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const MODDIR = '/data/adb/modules/vpn-hotspot';
+const CTL = 'sh ' + MODDIR + '/ctl.sh';
+
+// ── Root bridge (same contract as the other modules of the set) ─────────
+let EXEC_MODE = null, _cbSeq = 0;
+function hasBridge() { return typeof ksu !== 'undefined' && ksu && typeof ksu.exec === 'function'; }
+function callbackExec(cmd, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const name = '__vhs_cb_' + (++_cbSeq) + '_' + Date.now();
+    let settled = false;
+    window[name] = (errno, stdout, stderr) => {
+      if (settled) return; settled = true;
+      try { delete window[name]; } catch (e) { window[name] = undefined; }
+      resolve({ errno: typeof errno === 'number' ? errno : 0, stdout: stdout == null ? '' : String(stdout), stderr: stderr == null ? '' : String(stderr) });
+    };
+    try { ksu.exec(cmd, '{}', name); }
+    catch (e) { settled = true; try { delete window[name]; } catch (_) {} reject(e); return; }
+    setTimeout(() => { if (settled) return; settled = true; try { delete window[name]; } catch (_) {} reject(new Error('exec timeout')); }, timeoutMs || 30000);
+  });
+}
+function legacyExec(cmd) { const r = ksu.exec(cmd); return { errno: 0, stdout: typeof r === 'string' ? r : (r && r.stdout) || '', stderr: '' }; }
+// The callback form runs off the page's thread; the legacy one blocks the
+// whole page until the command ends. A slow first root shell (cold start)
+// must not push the page into legacy mode for good, so the callback form
+// gets two generous tries before falling back.
+async function detectExecMode() {
+  if (!hasBridge()) throw new Error('no root bridge');
+  for (const t of [8000, 15000]) {
+    try { const r = await callbackExec('echo vhs_ok', t); if ((r.stdout || '').indexOf('vhs_ok') >= 0) return 'callback'; }
+    catch (e) { if (!/timeout/.test(String(e && e.message))) break; }
+  }
+  try { const l = legacyExec('echo vhs_ok'); if ((l.stdout || '').indexOf('vhs_ok') >= 0) return 'legacy'; } catch (e) {}
+  throw new Error('root shell unavailable');
+}
+function b64ToText(b64) {
+  if (!b64) return '';
+  try { const bin = atob(b64); return new TextDecoder('utf-8').decode(Uint8Array.from(bin, c => c.charCodeAt(0))); } catch (e) { return ''; }
+}
+async function sh(cmd, timeoutMs) {
+  const wrapped = '{ ' + cmd + '; } 2>&1 | base64 | tr -d "\\n\\r"';
+  const res = EXEC_MODE === 'callback' ? await callbackExec(wrapped, timeoutMs) : legacyExec(wrapped);
+  return b64ToText((res.stdout || '').trim());
+}
+
+// ── One action at a time, with visible feedback ─────────────────────────
+let _pressed = null, _pressedAt = 0, _busyN = 0, _fgEndedAt = 0;
+document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('button'); if (b) { _pressed = b; _pressedAt = Date.now(); } }, true);
+const BG_CMD = /^(poll|log \d)/;
+const LOCK_FREE = '.tab, .fbtn';
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('button, label.sw, input[type=checkbox]');
+  if (!t || t.matches(LOCK_FREE)) return;
+  if (_busyN > 0 || e.timeStamp < _fgEndedAt) {
+    _pressed = null; e.preventDefault(); e.stopImmediatePropagation();
+    if (_busyN > 0) toast('Wait — the previous action is still running', 'err');
+  }
+}, true);
+async function ctl(args, timeoutMs) {
+  const fg = !BG_CMD.test(args);
+  let btn = null;
+  if (fg) {
+    if (_pressed && Date.now() - _pressedAt < 60000 && document.body.contains(_pressed)) btn = _pressed;
+    _pressed = null;
+    if (btn) btn.classList.add('working');
+    if (++_busyN === 1) { $('busy-bar').classList.add('on'); document.body.classList.add('locked'); }
+  }
+  try { return await sh(CTL + ' ' + args, timeoutMs); }
+  finally {
+    if (fg) {
+      if (btn) btn.classList.remove('working');
+      if (--_busyN <= 0) { _busyN = 0; $('busy-bar').classList.remove('on'); document.body.classList.remove('locked'); _fgEndedAt = performance.now(); }
+    }
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const num = v => { const n = parseInt(v, 10); return isNaN(n) ? 0 : n; };
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function parseKV(text) {
+  const out = { client: [] };
+  (text || '').split('\n').forEach(line => {
+    const i = line.indexOf('=');
+    if (i <= 0) return;
+    const k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
+    if (k === 'client') out.client.push(v); else out[k] = v;
+  });
+  return out;
+}
+function fmtDur(sec) {
+  sec = num(sec); if (sec < 1) return '—';
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  if (d) return `${d}d ${h}h ${m}m`; if (h) return `${h}h ${m}m`; if (m) return `${m}m ${s}s`; return `${s}s`;
+}
+let _toastTimer = null;
+function toast(msg, type) { const t = $('toast'); t.textContent = msg; t.className = 'toast show ' + (type || ''); clearTimeout(_toastTimer); _toastTimer = setTimeout(() => { t.className = 'toast'; }, 2600); }
+setInterval(() => { $('clock').textContent = new Date().toTimeString().slice(0, 8); }, 1000);
+function tethers(st) { return (st.tethers || '').split(/\s+/).filter(Boolean).map(e => { const i = e.indexOf('='); return { ifc: e.slice(0, i), net: e.slice(i + 1) }; }); }
+
+// ── Tabs ────────────────────────────────────────────────────────────────
+let currentTab = 'dash';
+function showTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if (name === 'log') loadLog();
+}
+
+// ── Render ──────────────────────────────────────────────────────────────
+let ST = {};
+function setBanner(cls, msg) { const b = $('banner'); b.className = cls; b.innerHTML = '<span class="live-dot"></span>' + msg; }
+
+function renderRoute(st) {
+  const tl = tethers(st), n = st.client.length;
+  const nodes = { cli: $('rn-cli'), vpn: $('rn-vpn'), net: $('rn-net') }, l1 = $('rl-1'), l2 = $('rl-2');
+  const set = (el, cls) => { el.className = 'node clip ' + cls; };
+  const setL = (el, cls) => { el.className = 'link ' + cls; };
+  $('rn-cli2').textContent = tl.length ? tl.map(t => t.ifc).join(' ') + ' · ' + n + (n === 1 ? ' device' : ' devices') : 'hotspot off';
+  $('rn-vpn1').textContent = st.vpn || 'VPN';
+  $('rn-vpn2').textContent = st.vpn ? 'table ' + st.vpn_table : 'not connected';
+  $('rn-net2').textContent = EXIT.ip ? EXIT.ip : (st.state === 'vpn' ? 'via tunnel' : '—');
+  switch (st.state) {
+    case 'vpn': set(nodes.cli, 'on'); set(nodes.vpn, 'on'); set(nodes.net, 'on'); setL(l1, 'flow'); setL(l2, 'flow'); break;
+    case 'blocked': set(nodes.cli, 'on'); set(nodes.vpn, 'warn'); set(nodes.net, 'off'); setL(l1, 'cut'); setL(l2, ''); if (st.tunnel === 'dead') $('rn-vpn2').textContent = 'not responding'; break;
+    case 'passthrough': set(nodes.cli, 'warn'); set(nodes.vpn, 'off'); set(nodes.net, 'warn'); setL(l1, 'plain'); setL(l2, 'plain'); $('rn-vpn2').textContent = 'bypassed'; break;
+    default: set(nodes.cli, 'off'); set(nodes.vpn, st.vpn ? 'on' : 'off'); set(nodes.net, 'off'); setL(l1, ''); setL(l2, '');
+  }
+}
+
+function renderBanner(st) {
+  if (st.watchdog !== 'running') { setBanner('b-error', 'Watchdog not running — nothing is being maintained. Reboot the phone.'); return; }
+  const tl = tethers(st).map(t => t.ifc).join(', ');
+  switch (st.state) {
+    case 'vpn':
+      if (st.rules === 'repairing') setBanner('b-warn', 'Rules changed by the system — repairing');
+      else setBanner('', `Hotspot devices use ${esc(st.vpn)}` + (st.dns === 'fallback' ? ` · DNS ${esc(st.fallback_dns)} via tunnel` : ''));
+      break;
+    case 'blocked': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch holds: devices have no internet'); break;
+    case 'passthrough': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch is off: devices use your connection directly'); break;
+    case 'idle': setBanner('b-idle', 'Hotspot is off' + (st.vpn ? ` · VPN ${esc(st.vpn)} ready` : '')); break;
+    case 'disabled': setBanner('b-idle', 'Turned off in Settings — tethering is Android\'s normal one'); break;
+    default: setBanner('b-idle', 'Waiting for the watchdog…');
+  }
+}
+
+const CHECKS = [
+  ['chk_route', 'Routing', 'Devices\' traffic goes to the VPN table'],
+  ['chk_kill', 'Kill switch', 'No VPN route → unreachable, never the plain uplink'],
+  ['chk_nat', 'Address translation', 'Devices share the tunnel\'s address'],
+  ['chk_forward', 'Firewall', 'Below DNSCrypt and ipset, above Android\'s tethering rules'],
+  ['chk_mss', 'Packet size', 'TCP segments sized for the tunnel MTU'],
+  ['chk_ipv6', 'IPv6', 'Not forwarded — cannot leak around an IPv4 tunnel'],
+  ['chk_dns', 'Device DNS', ''],
+];
+function renderProtection(st) {
+  if (st.state !== 'vpn' && st.state !== 'blocked') {
+    $('prot-body').innerHTML = '<div class="empty">' + (st.state === 'passthrough' ? 'Nothing active: kill switch is off and there is no VPN.' : 'Nothing to protect right now — rules are installed when the hotspot is on.') + '</div>';
+    $('prot-note').textContent = ''; $('dash-dot').className = 'tab-dot'; return;
+  }
+  let bad = 0;
+  $('prot-body').innerHTML = CHECKS.map(([k, name, desc]) => {
+    const v = st[k] || 'off';
+    let d = desc;
+    if (k === 'chk_dns') d = st.dns === 'local' ? 'Handled by DNSCrypt, which itself goes through the VPN' : st.dns === 'fallback' ? `Sent to ${st.fallback_dns} through the tunnel` : 'Not needed while devices are blocked';
+    if (k === 'chk_forward' && st.forward_position && st.forward_position !== 'ok' && st.forward_position !== '-') d = 'Position: ' + st.forward_position;
+    if (v === 'bad') bad++;
+    const pill = v === 'ok' ? '<span class="pill ok">ok</span>' : v === 'bad' ? '<span class="pill bad">repairing</span>' : '<span class="pill skip">not used</span>';
+    return `<div class="row"><div class="rn"><b>${esc(name)}</b><span>${esc(d)}</span></div>${pill}</div>`;
+  }).join('');
+  $('prot-note').textContent = bad ? bad + ' being repaired' : 'all in place';
+  $('prot-note').className = 's-note ' + (bad ? 'v a' : '');
+  $('dash-dot').className = 'tab-dot' + (bad ? ' warn' : '');
+}
+
+function renderSet(st) {
+  const dn = st.dnscrypt, ip = st.ipset;
+  const sib = (cls, name, state, active, onTxt, offTxt) => {
+    let pill, txt;
+    if (state === 'absent') { pill = '<span class="pill skip">not installed</span>'; txt = offTxt; }
+    else if (state === 'disabled') { pill = '<span class="pill warn">disabled</span>'; txt = offTxt; }
+    else if (active) { pill = `<span class="pill ${cls}">active</span>`; txt = onTxt; }
+    else { pill = '<span class="pill warn">not filtering</span>'; txt = 'Installed, but its hotspot rules are not in place right now.'; }
+    return `<div class="row sib ${cls}"><div class="rn"><b>${name}</b><span>${txt}</span></div>${pill}</div>`;
+  };
+  $('set-body').innerHTML =
+    sib('dnsc', 'DNSCrypt Proxy', dn, st.dnscrypt_hotspot === '1' || st.local_dns === '1', 'Encrypts and filters devices\' DNS; its queries go through this tunnel.', `Devices' DNS goes to ${esc(st.set_FALLBACK_DNS || '9.9.9.9')} through the tunnel instead.`) +
+    sib('ipset', 'ipset', ip, st.ipset_forward === '1', 'Blocks listed IP ranges for devices before they reach the tunnel.', 'No IP blocklists for devices.');
+}
+
+function renderStats(st) {
+  const lbl = { vpn: 'Via VPN', blocked: 'Blocked', passthrough: 'Direct', idle: 'Idle', disabled: 'Off' };
+  const cls = { vpn: '', blocked: 'a', passthrough: 'a', idle: 'm', disabled: 'm' };
+  $('s-state').textContent = lbl[st.state] || '—'; $('s-state').className = 'val ' + (st.state in cls ? cls[st.state] : 'm');
+  $('s-dev').textContent = tethers(st).length ? String(st.client.length) : '—';
+  $('s-ks').textContent = st.set_KILL_SWITCH === '1' ? 'On' : 'Off'; $('s-ks').className = 'val ' + (st.set_KILL_SWITCH === '1' ? '' : 'a');
+  $('s-dns').textContent = st.dns === 'local' ? 'DNSCrypt' : st.dns === 'fallback' ? (st.fallback_dns || '—') : '—';
+  $('s-dns').className = 'val ' + (st.dns === 'none' || !st.dns ? 'm' : '');
+}
+
+function renderTunnel(st) {
+  const tl = tethers(st), mtu = num(st.vpn_mtu);
+  $('t-if').textContent = st.vpn || 'none'; $('t-if').className = 'v ' + (st.vpn ? '' : 'm');
+  const th = st.set_TUNNEL_CHECK !== '1' ? ['not checked', 'm'] : !st.vpn ? ['—', 'm'] : st.tunnel === 'dead' ? ['NO — not responding', 'r'] : ['yes', ''];
+  $('t-health').textContent = th[0]; $('t-health').className = 'v ' + th[1];
+  $('t-table').textContent = st.vpn_table || '—';
+  $('t-mtu').textContent = mtu ? `${mtu} / ${mtu - 40}` : '—';
+  $('t-teth').textContent = tl.length ? tl.map(t => t.ifc + (t.net !== '-' ? ' ' + t.net : ' (starting)')).join(', ') : 'off';
+  $('t-teth').className = 'v ' + (tl.length ? '' : 'm');
+  $('t-since').textContent = st.since ? fmtDur(num(st.now) - num(st.since)) : '—';
+  $('w-run').textContent = st.watchdog === 'running' ? 'yes' : 'NO'; $('w-run').className = 'v ' + (st.watchdog === 'running' ? '' : 'r');
+  $('w-ev').textContent = st.events === 'on' ? 'watching (reacts in ~2 s)' : 'off — every 10 s'; $('w-ev').className = 'v ' + (st.events === 'on' ? '' : 'a');
+  $('w-tick').textContent = st.tick_age !== '' ? st.tick_age + ' s ago' : '—';
+  $('foot-l').textContent = (st.version ? 'v' + st.version : '') + (EXEC_MODE === 'legacy' ? ' · sync' : '');
+  $('hdr-ver').textContent = st.version ? 'v' + st.version : '';
+  $('foot-info').textContent = st.state === 'vpn' ? 'kill switch ' + (st.set_KILL_SWITCH === '1' ? 'on' : 'off') : '';
+}
+
+function renderDevices(st) {
+  const tl = tethers(st);
+  if (!tl.length) { $('dev-body').innerHTML = '<div class="empty">Hotspot is off.<br>Turn it on and devices appear here.</div>'; $('dev-note').textContent = ''; return; }
+  if (!st.client.length) { $('dev-body').innerHTML = '<div class="empty">No device connected yet.</div>'; $('dev-note').textContent = '0'; return; }
+  $('dev-note').textContent = st.client.length + (st.client.length === 1 ? ' device' : ' devices');
+  $('dev-body').innerHTML = st.client.map(c => {
+    const [ifc, ip, mac, state] = c.split(/\s+/);
+    const icon = /^(rndis|usb|ncm)/.test(ifc) ? '⌁' : /^(bt|bnep)/.test(ifc) ? 'ᛒ' : '◉';
+    return `<div class="dev"><div class="ic">${icon}</div><div class="ip">${esc(ip === '-' ? 'address pending' : ip)}</div><div class="ifc">${esc(ifc)}<br>${esc(state)}</div><div class="mac">${esc(mac)}</div></div>`;
+  }).join('');
+}
+
+function renderSettings(st) {
+  const en = $('cb-en'), ks = $('cb-ks');
+  if (!$('sw-en').classList.contains('busy')) en.checked = st.set_ENABLED === '1';
+  if (!$('sw-ks').classList.contains('busy')) ks.checked = st.set_KILL_SWITCH === '1';
+  if (!$('sw-tc').classList.contains('busy')) $('cb-tc').checked = st.set_TUNNEL_CHECK !== '0';
+  const vif = st.set_VPN_IFACE || 'auto';
+  if (!VIF_EDIT) {
+    document.querySelectorAll('#vif-seg button').forEach(b => b.classList.toggle('on', (b.dataset.v === 'auto') === (vif === 'auto')));
+    $('vif-row').classList.toggle('hidden', vif === 'auto');
+    if (vif !== 'auto' && document.activeElement !== $('vif-in')) $('vif-in').value = vif;
+  }
+  const fb = st.set_FALLBACK_DNS || '9.9.9.9', known = fb === '9.9.9.9' || fb === '1.1.1.1';
+  if (!DNS_EDIT) {
+    document.querySelectorAll('#dns-seg button').forEach(b => b.classList.toggle('on', known ? b.dataset.v === fb : b.dataset.v === 'custom'));
+    $('dns-row').classList.toggle('hidden', known);
+    if (!known && document.activeElement !== $('dns-in')) $('dns-in').value = fb;
+  }
+}
+
+function render(st) {
+  // An exit result belongs to the tunnel it was measured on
+  if (EXIT.ip && (st.vpn || '') !== (EXIT.via || '')) {
+    EXIT.ip = ''; EXIT.via = ''; EXIT.cleared = true;
+    $('exit-ip').textContent = '—'; $('exit-ip').className = 'glitch v m';
+  }
+  if (!EXIT.ip && EXIT.cleared) $('exit-sub').textContent = st.vpn ? 'The tunnel changed — tap Check to see the new exit.' : 'No VPN right now.';
+  ST = st;
+  renderBanner(st); renderRoute(st); renderStats(st); renderTunnel(st);
+  renderProtection(st); renderSet(st); renderDevices(st); renderSettings(st);
+}
+
+// ── Poll: files only on the device side (no iptables), every 4 s ─────────
+let _polling = false;
+async function poll() {
+  if (_polling || document.hidden) return;
+  _polling = true;
+  try {
+    const st = parseKV(await ctl('poll', 15000));
+    if (st.ok === '1') render(st);
+  } catch (e) { setBanner('b-error', 'No answer from the module: ' + esc(e.message)); }
+  finally { _polling = false; }
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────
+async function setKey(key, val) {
+  const r = parseKV(await ctl('set ' + key + ' ' + val));
+  if (r.ok === '1') {
+    toast(key.replace('_', ' ').toLowerCase() + ': saved', 'ok');
+    // the watchdog applies it in the background; show the result when done
+    setTimeout(poll, 900); setTimeout(poll, 2500);
+    return true;
+  }
+  toast(r.error || 'Not saved', 'err'); await poll(); return false;
+}
+async function setBool(key, cb) {
+  const sw = cb.closest('.sw'); sw.classList.add('busy');
+  try { await setKey(key, cb.checked ? '1' : '0'); } finally { sw.classList.remove('busy'); }
+}
+let VIF_EDIT = false, DNS_EDIT = false;
+function vifMode(m) {
+  if (m === 'auto') { VIF_EDIT = false; setKey('VPN_IFACE', 'auto'); return; }
+  VIF_EDIT = true;
+  document.querySelectorAll('#vif-seg button').forEach(b => b.classList.toggle('on', b.dataset.v === 'manual'));
+  $('vif-row').classList.remove('hidden');
+  if (!$('vif-in').value && ST.vpn) $('vif-in').value = ST.vpn;
+  $('vif-in').focus();
+}
+async function saveVif() {
+  const v = $('vif-in').value.trim();
+  if (!/^[A-Za-z0-9_.-]{1,15}$/.test(v)) { toast('Interface names are letters, digits, - _ . (max 15)', 'err'); return; }
+  if (await setKey('VPN_IFACE', v)) VIF_EDIT = false;
+}
+function dnsCustom() {
+  DNS_EDIT = true;
+  document.querySelectorAll('#dns-seg button').forEach(b => b.classList.toggle('on', b.dataset.v === 'custom'));
+  $('dns-row').classList.remove('hidden'); $('dns-in').focus();
+}
+async function setDns(v) {
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(v) || v.split('.').some(o => +o > 255)) { toast('Enter an IPv4 address, e.g. 9.9.9.9', 'err'); return; }
+  if (await setKey('FALLBACK_DNS', v)) DNS_EDIT = false;
+}
+async function doSync(force) {
+  const r = parseKV(await ctl(force ? 'sync force' : 'sync', 60000));
+  toast(force ? 'Rules rebuilt' : (r.rules === 'repairing' ? 'Repair started' : 'Everything in place'), r.ok === '1' ? 'ok' : 'err');
+  await poll();
+}
+async function doDiag() {
+  const t = await ctl('diag', 60000);
+  $('diag-out').textContent = t; $('diag-out').classList.remove('hidden'); $('diag-row').classList.remove('hidden');
+}
+function copyDiag() {
+  const t = $('diag-out').textContent;
+  const done = () => toast('Report copied', 'ok');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => fallbackCopy(t, done));
+  else fallbackCopy(t, done);
+}
+function fallbackCopy(t, done) {
+  const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed — select the text by hand', 'err'); }
+  ta.remove();
+}
+
+// ── Exit address (on demand only) ───────────────────────────────────────
+const EXIT = {};
+async function checkExit() {
+  $('exit-sub').textContent = 'Asking…';
+  const r = parseKV(await ctl('exitip', 30000));
+  if (r.ok !== '1') {
+    $('exit-ip').textContent = 'no answer'; $('exit-ip').className = 'v r';
+    $('exit-sub').textContent = (r.error || 'The IP service did not answer.') + (ST.state === 'blocked' ? ' The VPN is down.' : '');
+    return;
+  }
+  EXIT.ip = r.ip; EXIT.via = r.via || ''; EXIT.cleared = false;
+  $('exit-ip').textContent = r.ip; $('exit-ip').className = 'glitch';
+  const place = [r.city, r.country].filter(Boolean).join(', ');
+  $('exit-sub').textContent = [place, r.isp].filter(Boolean).join(' — ') + (r.via ? ` · through ${r.via}` : ' · no VPN: this is your own connection');
+  renderRoute(ST);
+}
+
+// ── Log ─────────────────────────────────────────────────────────────────
+const LVL = { INFO: true, WARN: true, ERROR: true };
+let LOGTXT = '';
+function toggleLvl(b) { LVL[b.dataset.l] = !LVL[b.dataset.l]; b.classList.toggle('on', LVL[b.dataset.l]); drawLog(); }
+async function loadLog() { LOGTXT = await ctl('log 300', 15000); drawLog(); }
+function drawLog() {
+  const lines = LOGTXT.split('\n').filter(Boolean).reverse();
+  let shown = 0;
+  const html = lines.map(l => {
+    const m = /^(\S+ \S+) \[(\w+)\] (.*)$/.exec(l);
+    if (!m) return '';
+    if (!LVL[m[2]]) return '';
+    shown++;
+    return `<span class="ll ${m[2]}"><span class="t">${esc(m[1].slice(5))}</span> <span class="m">${esc(m[3])}</span></span>`;
+  }).join('');
+  $('log-body').innerHTML = html || '<span class="ll"><span class="t">No entries.</span></span>';
+  $('log-count').textContent = shown + ' / ' + lines.length;
+}
+
+// ── Start ───────────────────────────────────────────────────────────────
+(async function init() {
+  try { EXEC_MODE = await detectExecMode(); }
+  catch (e) {
+    document.querySelector('main').innerHTML = '<div class="fatal">This page needs root access through your root manager (KernelSU, SukiSU, APatch or Magisk WebUI).<br><br>' + esc(e.message) + '</div>';
+    setBanner('b-error', 'No root bridge'); return;
+  }
+  await poll();
+  setInterval(poll, 4000);
+  setInterval(() => { if (currentTab === 'log' && !document.hidden) loadLog(); }, 6000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+})();
+</script>
+</body>
+</html>

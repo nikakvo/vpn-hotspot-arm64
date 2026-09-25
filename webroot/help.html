@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>VPN Hotspot — Help</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
+  <style>
+    :root {
+      --bg: #000; --bg2: #070600; --surface: #0c0b03; --surface2: #161400;
+      --border: #2c2908; --border2: #4a4410;
+      --acc: #fcee0a; --amber: #ff6a1f; --red: #ff4455; --dnsc: #00ff88; --ipset: #00aaff;
+      --text: #ece7c8; --dim: #8f8958; --hi: #fffbe0;
+      --mono: 'Share Tech Mono', ui-monospace, 'Roboto Mono', Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 70px); }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.7; min-height: 100vh; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 40px); }
+    .header { background: #070600; border-bottom: 1px solid var(--border); padding: 12px 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: 0; z-index: 10; }
+    .h-title { font-family: var(--mono); font-size: 14px; color: var(--acc); letter-spacing: 1.5px; text-transform: uppercase; }
+    .h-sub { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 1px; }
+    .back-btn { background: transparent; border: 1px solid var(--acc); border-radius: 3px; color: var(--acc); padding: 7px 14px; font-size: 11px; font-family: var(--mono); letter-spacing: 1px; cursor: pointer; }
+    .back-btn:active { background: var(--acc); color: #000; }
+    :focus-visible { outline: 1px solid var(--acc); outline-offset: 2px; }
+    .toc { margin: 14px 14px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 12px 14px; }
+    .toc-title { font-size: 9px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; color: var(--dim); margin-bottom: 8px; }
+    .toc a { display: block; color: var(--acc); text-decoration: none; font-size: 12.5px; font-family: var(--mono); padding: 3px 0; }
+    .sec-title { font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--dim); font-family: var(--mono); padding: 26px 16px 8px; }
+    .sec-title::before { content: '// '; color: var(--acc); opacity: .6; }
+    .box { margin: 0 14px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; }
+    .box p { margin-bottom: 10px; } .box p:last-child { margin-bottom: 0; }
+    .box h3 { font-family: var(--mono); font-size: 13px; color: var(--acc); font-weight: normal; letter-spacing: .5px; margin: 16px 0 6px; }
+    .box h3:first-child { margin-top: 0; }
+    .box ul, .box ol { margin: 6px 0 10px 18px; } .box li { margin-bottom: 5px; }
+    strong { color: var(--hi); font-weight: 600; }
+    code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 0 5px; word-break: break-all; }
+    pre { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text); margin: 8px 0; white-space: pre; }
+    pre .cm { color: var(--dim); }
+    .tw { overflow-x: auto; margin: 6px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; padding: 7px 8px 7px 0; color: var(--dim); font-weight: normal; font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; font-size: 9.5px; border-bottom: 1px solid var(--border); }
+    td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { color: var(--hi); font-family: var(--mono); white-space: nowrap; padding-right: 12px; }
+    .pill { display: inline-block; font-family: var(--mono); font-size: 9px; letter-spacing: .8px; padding: 0 6px; border-radius: 2px; border: 1px solid; text-transform: uppercase; white-space: nowrap; }
+    .ok { color: var(--acc); border-color: rgba(252,238,10,.45); } .warn { color: var(--amber); border-color: rgba(255,106,31,.45); }
+    .bad { color: var(--red); border-color: rgba(255,68,85,.45); } .skip { color: var(--dim); border-color: var(--border); }
+    .note { border-left: 2px solid var(--acc); background: rgba(252,238,10,.06); padding: 10px 12px; border-radius: 0 4px 4px 0; margin: 10px 0; font-size: 13px; }
+    .note.warn { border-left-color: var(--amber); background: rgba(255,106,31,.07); }
+    .flow { font-family: var(--mono); font-size: 12px; color: var(--text); text-align: center; line-height: 1.9; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin: 8px 0; }
+    .flow b { color: var(--acc); font-weight: normal; }
+    .flow .dn { color: var(--dnsc); } .flow .ip { color: var(--ipset); }
+    .footer { text-align: center; padding: 28px 16px 8px; font-size: 10px; font-family: var(--mono); color: var(--dim); }
+    .footer a { color: var(--acc); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="h-title" style="text-shadow:1.5px 0 rgba(255,0,90,.55),-1.5px 0 rgba(0,235,255,.45)">⬡ Help</div>
+    <div class="h-sub">vpn hotspot · arm64</div>
+  </div>
+  <button class="back-btn" onclick="goBack()">‹ BACK</button>
+</div>
+
+<div class="toc">
+  <div class="toc-title">contents</div>
+  <a href="#what">1 · What this module does</a>
+  <a href="#start">2 · Quick start</a>
+  <a href="#how">3 · How it works</a>
+  <a href="#states">4 · States and the banner</a>
+  <a href="#dash">5 · Dashboard</a>
+  <a href="#settings">6 · Settings</a>
+  <a href="#set">7 · With DNSCrypt Proxy and ipset</a>
+  <a href="#limits">8 · IPv6, speed and other limits</a>
+  <a href="#cli">9 · Command line</a>
+  <a href="#trouble">10 · Troubleshooting</a>
+  <a href="#files">11 · Files, update, uninstall</a>
+</div>
+
+<div class="sec-title" id="what">1 · what this module does</div>
+<div class="box">
+  <p>Android's VPN protects the apps on your phone only. Devices connected to your <strong>hotspot</strong> (or USB / Bluetooth tethering) are sent straight to your mobile or Wi-Fi connection, around the VPN: a laptop on your hotspot shows your carrier's address, not the VPN's.</p>
+  <p>This module sends everything those devices do <strong>through the phone's VPN</strong>. With the kill switch on, they never reach the internet any other way: if the VPN drops, they are cut off until it is back.</p>
+  <div class="tw"><table>
+    <tr><th>works with</th><th></th></tr>
+    <tr><td>VPN apps</td><td>Any app that uses Android's VPN: root WireGuard (kernel backend) and <code>VpnService</code> apps such as v2rayNG, Proton VPN or OpenVPN. Interface names like <code>tun0</code> or <code>wg-…</code> are followed automatically. Tested on the device: WireGuard (kernel backend) and v2rayNG.</td></tr>
+    <tr><td>Tethering</td><td>Wi-Fi hotspot, USB, Bluetooth — several at once.</td></tr>
+    <tr><td>Root</td><td>SukiSU Ultra, KernelSU, APatch or Magisk (WebUI through MMRL / KSU WebUI Standalone).</td></tr>
+  </table></div>
+</div>
+
+<div class="sec-title" id="start">2 · quick start</div>
+<div class="box">
+  <ol>
+    <li>Flash the zip, reboot.</li>
+    <li>Connect your VPN, turn the hotspot on, connect a device.</li>
+    <li>Open this WebUI: the route at the top shows <strong>Clients → your VPN → Internet</strong> with a moving line.</li>
+    <li>On the device, open <code>ipleak.net</code> or a "what is my IP" page: it shows the VPN's address.</li>
+    <li>Turn the VPN off for a moment: the device loses internet (kill switch), and gets it back when the VPN reconnects — no action needed.</li>
+  </ol>
+</div>
+
+<div class="sec-title" id="how">3 · how it works</div>
+<div class="box">
+  <div class="flow">
+    device on the hotspot<br>↓<br>
+    <span class="dn">DNSCrypt</span> and <span class="ip">ipset</span> filters (if installed)<br>↓<br>
+    <b>routing rule</b>: everything from the hotspot → the VPN's table<br>↓<br>
+    <b>address translation</b> into the tunnel<br>↓<br>
+    VPN server → internet
+  </div>
+  <h3>The pieces</h3>
+  <p>Per hotspot interface the module adds routing rules just above Android's own tethering rule (priority 20400–20600, Android's is 21000), a firewall chain that only lets devices out through the VPN, address translation into the tunnel, a TCP packet-size limit for the tunnel, and a block on forwarded IPv6.</p>
+  <h3>Watchdog</h3>
+  <p>A small background loop keeps all of this true while things change: hotspot on/off, a new hotspot subnet, the VPN reconnecting (Android gives it a new routing table each time), a server switch (new interface name), a new MTU, Android reordering or flushing the firewall. It listens for network events and reacts about 2 seconds after they settle; every 10 seconds it also checks what produces no event.</p>
+  <h3>Living next to Android</h3>
+  <p>While a VPN connects, Android's network daemon (netd) changes the firewall a lot. The module waits until that burst is over, reads each table once and writes all its changes in one step, so netd never has to wait for it. A hotspot that appears in the meantime is blocked at once with a routing rule that does not touch the firewall.</p>
+</div>
+
+<div class="sec-title" id="states">4 · states and the banner</div>
+<div class="box">
+  <div class="tw"><table>
+    <tr><th>state</th><th>meaning</th></tr>
+    <tr><td><span class="pill ok">via vpn</span></td><td>Hotspot devices use the VPN. The banner names the interface.</td></tr>
+    <tr><td><span class="pill warn">blocked</span></td><td>No VPN, kill switch on: devices have no internet. Connect the VPN.</td></tr>
+    <tr><td><span class="pill warn">direct</span></td><td>No VPN, kill switch off: devices use your connection directly, like without the module.</td></tr>
+    <tr><td><span class="pill skip">idle</span></td><td>Hotspot is off. Nothing is installed.</td></tr>
+    <tr><td><span class="pill skip">off</span></td><td>Turned off in Settings. Nothing is installed.</td></tr>
+  </table></div>
+  <p>"Rules changed by the system — repairing" means Android or another module changed the firewall; the watchdog puts it back within seconds.</p>
+</div>
+
+<div class="sec-title" id="dash">5 · dashboard</div>
+<div class="box">
+  <h3>Route</h3>
+  <p>Where hotspot traffic goes right now. Moving yellow line: through the VPN. Red cut: kill switch. Orange: straight to your connection.</p>
+  <h3>Exit</h3>
+  <p><strong>Check</strong> asks an IP service (ip-api.com, ipinfo.io as fallback) once, through the VPN — the same way the devices go — and shows the address, place and provider websites see. Nothing is sent until you tap it.</p>
+  <h3>Protection</h3>
+  <p>Each piece, checked against the live firewall on every watchdog pass: <span class="pill ok">ok</span> in place, <span class="pill bad">repairing</span> missing or moved (fixed on the next pass), <span class="pill skip">not used</span> not needed in this state (for example IPv6 on a device without it).</p>
+  <h3>Devices</h3>
+  <p>Wi-Fi devices come from the hotspot's own station list (the same count Android shows); USB and Bluetooth devices from the neighbour table.</p>
+</div>
+
+<div class="sec-title" id="settings">6 · settings</div>
+<div class="box">
+  <div class="tw"><table>
+    <tr><th>setting</th><th></th></tr>
+    <tr><td>Route through VPN</td><td>Master switch. Off removes every rule at once.</td></tr>
+    <tr><td>Kill switch</td><td>On (default): no VPN → no internet for devices. Off: no VPN → devices use your connection directly.</td></tr>
+    <tr><td>Detect a dead tunnel</td><td>On (default): if the phone keeps sending into the VPN for 20 s and nothing comes back, the module pings 1.1.1.1 / 9.9.9.9 through the tunnel. No answer → the VPN counts as down (kill switch on: devices blocked; off: devices use your connection) until it answers again. Catches a VPN that is "connected" but dead, e.g. after switching from Wi-Fi to mobile data.</td></tr>
+    <tr><td>VPN interface</td><td>Auto (default) follows the VPN Android has connected. Choose a name only when two VPNs run at once.</td></tr>
+    <tr><td>DNS fallback</td><td>Only used when no local resolver handles DNS (DNSCrypt Proxy missing or paused). Default Quad9 <code>9.9.9.9</code>, always reached through the tunnel.</td></tr>
+  </table></div>
+  <p><strong>Check now</strong> compares the rules with what should be there and repairs. <strong>Rebuild</strong> puts everything back from scratch. <strong>Report</strong> collects the state, all rules and the log in one text you can copy.</p>
+</div>
+
+<div class="sec-title" id="set">7 · with dnscrypt proxy and ipset</div>
+<div class="box">
+  <p>Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel GKI_Kernel_SukiSU.</p>
+  <p>The three modules are one set. Their firewall order is fixed and checked on every pass: <span style="color:var(--dnsc)">DNSCrypt</span>'s hotspot filter first, then <span style="color:var(--ipset)">ipset</span>'s IP blocklists, then this module's tunnel rules, then Android's. A device can never reach the tunnel around the two filters.</p>
+  <p><strong>DNS:</strong> with DNSCrypt Proxy installed, a device asks the phone, DNSCrypt answers — encrypted, filtered, and itself sent through the VPN. Without it (or while it is paused) the module sends devices' DNS to the fallback server through the tunnel, so it never goes to your carrier's resolver.</p>
+  <div class="note">You can remove the <code>DNS =</code> line from your WireGuard configs: with DNSCrypt Proxy, DNS never needs the VPN provider's resolver.</div>
+</div>
+
+<div class="sec-title" id="limits">8 · IPv6, speed and other limits</div>
+<div class="box">
+  <h3>IPv6</h3>
+  <p>Devices' IPv6 is not forwarded, so nothing leaks around an IPv4-only tunnel. Devices fall back to IPv4 at once (they get a rejection, not a timeout).</p>
+  <h3>Speed</h3>
+  <p>The module adds no measurable cost; the tunnel and the hotspot radio set the limit. A 2.4 GHz hotspot tops out near 100 Mbit/s — set the hotspot to <strong>5 GHz</strong> in Android's hotspot settings if your devices support it.</p>
+  <h3>Offload</h3>
+  <p>Android can speed up tethering by bypassing the firewall (tether offload). It only does so for traffic to your normal connection, never for traffic sent into the VPN, so no setting needs changing.</p>
+</div>
+
+<div class="sec-title" id="cli">9 · command line</div>
+<div class="box">
+<pre><span class="cm"># as root</span>
+sh /data/adb/modules/vpn-hotspot/ctl.sh status
+sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0
+sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto
+sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 9.9.9.9
+sh /data/adb/modules/vpn-hotspot/ctl.sh clients
+sh /data/adb/modules/vpn-hotspot/ctl.sh exitip
+sh /data/adb/modules/vpn-hotspot/ctl.sh sync       <span class="cm"># check now</span>
+sh /data/adb/modules/vpn-hotspot/ctl.sh sync force <span class="cm"># rebuild</span>
+sh /data/adb/modules/vpn-hotspot/ctl.sh log 100
+sh /data/adb/modules/vpn-hotspot/ctl.sh diag       <span class="cm"># full report</span></pre>
+</div>
+
+<div class="sec-title" id="trouble">10 · troubleshooting</div>
+<div class="box">
+  <h3>Devices have no internet</h3>
+  <p>Is the state <span class="pill warn">blocked</span>? Then the VPN is not connected — the kill switch is doing its job. Connect the VPN, or turn the kill switch off.</p>
+  <h3>A device shows my real address</h3>
+  <p>Check the state is <span class="pill ok">via vpn</span> and every Protection row is <span class="pill ok">ok</span>. Open <strong>Report</strong> and look at "route for client": it must say <code>dev</code> followed by your VPN interface.</p>
+  <h3>A guest's phone has no internet (Private DNS)</h3>
+  <p>A phone with <strong>Private DNS set to a hostname</strong> (Android: Settings → Private DNS, e.g. <code>dns.adguard-dns.com</code>) accepts no other DNS. With DNSCrypt Proxy's <em>Block DoT for hotspot clients</em> on, that phone gets no DNS at all. Either the guest sets Private DNS to <strong>Automatic</strong> (the phone then uses your DNSCrypt, filtered), or you turn that switch off in DNSCrypt Proxy (their encrypted DNS then works — still through your VPN, but without your filters). Encrypted DNS cannot be redirected to yours.</p>
+  <h3>After a server switch a device still shows the old address</h3>
+  <p>The module ends every client connection when the VPN changes server, so they reopen through the new one. A page may still show a cached result — reload it.</p>
+  <h3>Connections opened while devices went out directly</h3>
+  <p>While devices use your connection directly (module off, or kill switch off without VPN), Android accelerates their connections past the firewall. The moment the tunnel takes over again, the module ends those connections (a small helper, <code>bin/vhs-ctflush</code>); devices reopen them at once, through the VPN. The log shows how many were ended.</p>
+  <h3>The VPN app fails to connect or disconnect</h3>
+  <p>Turn the module off in Settings, then retry. If the VPN now works, send the <strong>Report</strong> and the VPN app's own log. If it still fails, reboot: Android may have kept a half-removed VPN network.</p>
+  <h3>Watchdog not running</h3>
+  <p>Reboot. If it stays stopped, the log (Log tab, or <code>/data/adb/vpn-hotspot.log</code>) says why.</p>
+</div>
+
+<div class="sec-title" id="files">11 · files, update, uninstall</div>
+<div class="box">
+  <div class="tw"><table>
+    <tr><th>file</th><th></th></tr>
+    <tr><td>/data/adb/vpn-hotspot.conf</td><td>Settings (kept on update)</td></tr>
+    <tr><td>/data/adb/vpn-hotspot.log</td><td>Log (last 1000 lines)</td></tr>
+    <tr><td>/data/adb/vpn-hotspot-state/</td><td>Runtime state, cleared at boot</td></tr>
+  </table></div>
+  <p><strong>Update:</strong> flash the new zip, reboot. Until the reboot the old version keeps devices routed.</p>
+  <p><strong>Uninstall:</strong> every rule is removed at once, then settings and log are deleted. Tethering is Android's normal one again.</p>
+</div>
+
+<div class="footer">VPN Hotspot Arm64 · by Tears Burn · <a href="index.html">back to dashboard</a></div>
+
+<script>
+function goBack() { if (history.length > 1) history.back(); else location.href = 'index.html'; }
+</script>
+</body>
+</html>

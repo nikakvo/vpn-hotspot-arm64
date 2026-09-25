@@ -1,0 +1,7 @@
+id=vpn-hotspot
+name=VPN Hotspot Arm64
+version=1.0-r12
+versionCode=12
+author=Tears Burn
+description=Routes hotspot and tethering clients through the phone's VPN, with kill switch. Status: Init
+updateJson=https://raw.githubusercontent.com/nikakvo/vpn-hotspot-arm64/main/update.json
