@@ -85,15 +85,19 @@ vhs_plan() {
     tunnel_health "$VPN_IF"
     P_TUN=$VPN_HEALTH
   fi
+  WGS_DIRECT=""
   if [ -n "$VPN_IF" ] && [ "$P_TUN" = ok ]; then
     P_STATE=vpn
     if local_dns_active "$S_N"; then P_DNS=local; else P_DNS=fallback; P_FB=$(conf_get FALLBACK_DNS); fi
+  elif [ -z "$VPN_IF" ] && wgs_direct; then
+    # WG Shield turned off / paused by the user: clients go direct like the phone
+    P_STATE=passthrough
   elif [ "$P_KS" = 1 ]; then
     P_STATE=blocked
   else
     P_STATE=passthrough
   fi
-  P_SIG="state=$P_STATE ks=$P_KS vpn=$VPN_IF table=$VPN_TID mtu=$VPN_MTU tunnel=$P_TUN dns=$P_DNS fb=$P_FB tethers=$P_TETHERS"
+  P_SIG="state=$P_STATE ks=$P_KS vpn=$VPN_IF wgs=$WGS_TUNNEL wgsd=$WGS_DIRECT table=$VPN_TID mtu=$VPN_MTU tunnel=$P_TUN dns=$P_DNS fb=$P_FB tethers=$P_TETHERS"
 }
 
 # What one tether interface gets: route (through the VPN), block (kill
@@ -429,13 +433,20 @@ vhs_sync() {
       # their open connections would carry on through the new server with
       # the old exit - Proton gives every server the same inside address
       # (10.2.0.2), so nothing breaks them. End all of them.
+      # WG Shield keeps one interface (wgs0) for every server: its tunnel
+      # name tells a server switch apart.
+      _cv="$VPN_IF${WGS_TUNNEL:+:$WGS_TUNNEL}"
       _lv=""; read -r _lv 2>/dev/null < "$LAST_VPN_FILE"
-      if [ -n "$_lv" ] && [ "$_lv" != "$VPN_IF" ]; then
-        _cut_direct all "server changed ($_lv -> $VPN_IF)"
+      if [ -n "$_lv" ] && [ "$_lv" != "$_cv" ]; then
+        _cut_direct all "server changed ($_lv -> $_cv)"
       else
         case "$_prev_state" in vpn | blocked) ;; *) _cut_direct ;; esac
       fi
-      echo "$VPN_IF" > "$LAST_VPN_FILE"
+      echo "$_cv" > "$LAST_VPN_FILE"
+      if [ -n "$WGS_TUNNEL" ]; then _cs=wg-shield; else _cs=android; fi
+      _os=""; read -r _os 2>/dev/null < "$LAST_SRC_FILE"
+      [ "$_os" = "$_cs" ] || echo "$_cs" > "$LAST_SRC_FILE"
+      unset _cv _cs _os
       unset _lv
     fi
     case "$_reason" in
@@ -477,12 +488,13 @@ _tether_names() { _tn=""; for _e in $P_TETHERS; do _tn="${_tn:+$_tn }${_e%%=*}";
 
 _log_state_change() { # <previous state> [quiet]
   case "$P_STATE" in
-    vpn) _m="clients on $(_tether_names) -> VPN $VPN_IF (table $VPN_TID, mtu $VPN_MTU, dns $P_DNS${P_FB:+ $P_FB})"
-         _d="✅ Hotspot via $VPN_IF" ;;
+    vpn) _m="clients on $(_tether_names) -> VPN $VPN_IF${WGS_TUNNEL:+ (WG Shield: $WGS_TUNNEL)} (table $VPN_TID, mtu $VPN_MTU, dns $P_DNS${P_FB:+ $P_FB})"
+         if [ -n "$WGS_TUNNEL" ]; then _d="✅ Hotspot via WG Shield · $WGS_TUNNEL"; else _d="✅ Hotspot via $VPN_IF"; fi ;;
     blocked) _m="no VPN${P_TUN:+ ($VPN_IF not responding)} - kill switch: clients on $(_tether_names) blocked"
              _d="⛔ Waiting for VPN (clients blocked)" ;;
-    passthrough) _m="no VPN${P_TUN:+ ($VPN_IF not responding)} - kill switch off: clients on $(_tether_names) use the normal uplink"
-                 _d="⚠️ No VPN (kill switch off)" ;;
+    passthrough) if [ -n "$WGS_DIRECT" ]; then _m="WG Shield $WGS_DIRECT by the user - clients on $(_tether_names) use the normal uplink, like the phone"
+                 else _m="no VPN${P_TUN:+ ($VPN_IF not responding)} - kill switch off: clients on $(_tether_names) use the normal uplink"; fi
+                 if [ -n "$WGS_DIRECT" ]; then _d="↪️ Direct (WG Shield $WGS_DIRECT)"; else _d="⚠️ No VPN (kill switch off)"; fi ;;
     idle) _m="no tethering"; _d="💤 Idle (no hotspot)" ;;
     disabled) _m="disabled"; _d="⏸️ Disabled" ;;
   esac
@@ -524,6 +536,9 @@ _write_status() { # [rules state]
     echo "state=$P_STATE"
     echo "kill_switch=$P_KS"
     echo "vpn=$VPN_IF"
+    echo "vpn_source=$([ -n "$WGS_TUNNEL" ] && echo wg-shield || { [ -n "$VPN_IF" ] && echo android; })"
+    echo "wgs_tunnel=$WGS_TUNNEL"
+    echo "wgs_direct=$WGS_DIRECT"
     echo "vpn_table=$VPN_TID"
     echo "vpn_mtu=$VPN_MTU"
     echo "tunnel=$P_TUN"

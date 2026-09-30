@@ -1,6 +1,17 @@
 # Changelog
 
-Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU), with WireGuard (kernel backend) and v2rayNG. Part of a set with DNSCrypt Proxy Arm64 and ipset-arm64.
+Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU), with WireGuard (kernel backend) and v2rayNG. Part of a set with DNSCrypt Proxy Arm64, ipset-arm64 and WG Shield Arm64.
+
+## 1.0-r13
+
+Works with WG Shield Arm64 — the kernel WireGuard module of the same set.
+
+* **WG Shield's tunnel is used for hotspot devices.** WG Shield runs WireGuard without an app and without Android's VPN, so the VPN rules this module reads do not name it. It now reads WG Shield's status file instead and routes devices through its tunnel (`wgs0`) whenever it reports *up* — also after a server switch there, which ends devices' open connections once so they reopen through the new server
+* **Your choice, not a failure.** When you turn WG Shield off or pause it, devices go direct like the phone. The kill switch still holds when its tunnel fails (connecting, no handshake) or when a VPN app drops — a VPN app cannot tell a crash from being closed, so it is always treated as a failure. The rule applies only when WG Shield was the VPN devices used last (remembered across reboots)
+* **Dashboard:** the route shows the WG Shield tunnel's name, the banner says *Hotspot devices use WG Shield · tunnel* or *WG Shield is off — devices use your connection directly*; the networking set has a WG Shield row. Manager status: *Hotspot via WG Shield · tunnel* / *Direct (WG Shield off)*
+* A VPN app connected while WG Shield is on still wins: WG Shield pauses itself and that app's VPN is used, as before
+* **Look:** the title has no colour fringes any more, and the moving line of the route no longer stops for a moment while the page refreshes
+* Status keys `vpn_source`, `wgs_tunnel`, `wgs_direct`; poll keys `wgshield`, `wgshield_state`
 
 ## 1.0-r12
 

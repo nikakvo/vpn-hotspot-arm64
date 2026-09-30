@@ -59,7 +59,7 @@
 
 <div class="header">
   <div>
-    <div class="h-title" style="text-shadow:1.5px 0 rgba(255,0,90,.55),-1.5px 0 rgba(0,235,255,.45)">⬡ Help</div>
+    <div class="h-title">⬡ Help</div>
     <div class="h-sub">vpn hotspot · arm64</div>
   </div>
   <button class="back-btn" onclick="goBack()">‹ BACK</button>
@@ -73,7 +73,7 @@
   <a href="#states">4 · States and the banner</a>
   <a href="#dash">5 · Dashboard</a>
   <a href="#settings">6 · Settings</a>
-  <a href="#set">7 · With DNSCrypt Proxy and ipset</a>
+  <a href="#set">7 · With DNSCrypt Proxy, ipset and WG Shield</a>
   <a href="#limits">8 · IPv6, speed and other limits</a>
   <a href="#cli">9 · Command line</a>
   <a href="#trouble">10 · Troubleshooting</a>
@@ -87,6 +87,7 @@
   <div class="tw"><table>
     <tr><th>works with</th><th></th></tr>
     <tr><td>VPN apps</td><td>Any app that uses Android's VPN: root WireGuard (kernel backend) and <code>VpnService</code> apps such as v2rayNG, Proton VPN or OpenVPN. Interface names like <code>tun0</code> or <code>wg-…</code> are followed automatically. Tested on the device: WireGuard (kernel backend) and v2rayNG.</td></tr>
+    <tr><td>WG Shield</td><td>The kernel WireGuard module of the same set. Android sees no VPN there, so this module reads WG Shield's status instead and uses its tunnel (<code>wgs0</code>) whenever it is up — also when you switch its server.</td></tr>
     <tr><td>Tethering</td><td>Wi-Fi hotspot, USB, Bluetooth — several at once.</td></tr>
     <tr><td>Root</td><td>SukiSU Ultra, KernelSU, APatch or Magisk (WebUI through MMRL / KSU WebUI Standalone).</td></tr>
   </table></div>
@@ -126,7 +127,7 @@
     <tr><th>state</th><th>meaning</th></tr>
     <tr><td><span class="pill ok">via vpn</span></td><td>Hotspot devices use the VPN. The banner names the interface.</td></tr>
     <tr><td><span class="pill warn">blocked</span></td><td>No VPN, kill switch on: devices have no internet. Connect the VPN.</td></tr>
-    <tr><td><span class="pill warn">direct</span></td><td>No VPN, kill switch off: devices use your connection directly, like without the module.</td></tr>
+    <tr><td><span class="pill warn">direct</span></td><td>No VPN and kill switch off — or you turned WG Shield off or paused it: devices use your connection directly, like without the module.</td></tr>
     <tr><td><span class="pill skip">idle</span></td><td>Hotspot is off. Nothing is installed.</td></tr>
     <tr><td><span class="pill skip">off</span></td><td>Turned off in Settings. Nothing is installed.</td></tr>
   </table></div>
@@ -158,12 +159,13 @@
   <p><strong>Check now</strong> compares the rules with what should be there and repairs. <strong>Rebuild</strong> puts everything back from scratch. <strong>Report</strong> collects the state, all rules and the log in one text you can copy.</p>
 </div>
 
-<div class="sec-title" id="set">7 · with dnscrypt proxy and ipset</div>
+<div class="sec-title" id="set">7 · with dnscrypt proxy, ipset and wg shield</div>
 <div class="box">
   <p>Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel GKI_Kernel_SukiSU.</p>
   <p>The three modules are one set. Their firewall order is fixed and checked on every pass: <span style="color:var(--dnsc)">DNSCrypt</span>'s hotspot filter first, then <span style="color:var(--ipset)">ipset</span>'s IP blocklists, then this module's tunnel rules, then Android's. A device can never reach the tunnel around the two filters.</p>
   <p><strong>DNS:</strong> with DNSCrypt Proxy installed, a device asks the phone, DNSCrypt answers — encrypted, filtered, and itself sent through the VPN. Without it (or while it is paused) the module sends devices' DNS to the fallback server through the tunnel, so it never goes to your carrier's resolver.</p>
   <div class="note">You can remove the <code>DNS =</code> line from your WireGuard configs: with DNSCrypt Proxy, DNS never needs the VPN provider's resolver.</div>
+  <p><strong>WG Shield:</strong> its tunnel is used as soon as WG Shield reports it <em>up</em>. While it connects or is down, devices get what the kill switch says (no internet when it is on). When <em>you</em> turn WG Shield off or pause it, devices go direct like the phone — the kill switch is for failures, not for your choice. This applies only when WG Shield was the VPN devices used last; a VPN app that disconnects is always treated as a failure, since the module cannot tell whether you closed it. When a VPN app is connected, WG Shield pauses itself and that app's VPN is used instead. A server switch in WG Shield ends devices' open connections once, so they reopen through the new server.</p>
 </div>
 
 <div class="sec-title" id="limits">8 · IPv6, speed and other limits</div>
@@ -188,6 +190,7 @@ sh /data/adb/modules/vpn-hotspot/ctl.sh exitip
 sh /data/adb/modules/vpn-hotspot/ctl.sh sync       <span class="cm"># check now</span>
 sh /data/adb/modules/vpn-hotspot/ctl.sh sync force <span class="cm"># rebuild</span>
 sh /data/adb/modules/vpn-hotspot/ctl.sh log 100
+sh /data/adb/modules/vpn-hotspot/ctl.sh log clear  <span class="cm"># empty the log</span>
 sh /data/adb/modules/vpn-hotspot/ctl.sh diag       <span class="cm"># full report</span></pre>
 </div>
 
@@ -214,7 +217,7 @@ sh /data/adb/modules/vpn-hotspot/ctl.sh diag       <span class="cm"># full repor
   <div class="tw"><table>
     <tr><th>file</th><th></th></tr>
     <tr><td>/data/adb/vpn-hotspot.conf</td><td>Settings (kept on update)</td></tr>
-    <tr><td>/data/adb/vpn-hotspot.log</td><td>Log (last 1000 lines)</td></tr>
+    <tr><td>/data/adb/vpn-hotspot.log</td><td>Log (last 1000 lines; <strong>Clear</strong> in the Log tab empties it)</td></tr>
     <tr><td>/data/adb/vpn-hotspot-state/</td><td>Runtime state, cleared at boot</td></tr>
   </table></div>
   <p><strong>Update:</strong> flash the new zip, reboot. Until the reboot the old version keeps devices routed.</p>

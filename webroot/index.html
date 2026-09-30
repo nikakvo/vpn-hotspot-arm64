@@ -18,6 +18,7 @@
       --red:    #ff4455;
       --dnsc:   #00ff88;
       --ipset:  #00aaff;
+      --wgs:    #7dd3fc;
       --border: #2c2908;
       --line:   #18160a;
       --muted:  #8a8452;
@@ -64,7 +65,7 @@
     .clip { --nb: var(--border); position: relative; clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%); }
     .clip::after { content: ''; position: absolute; top: 0; right: 0; width: 9px; height: 9px; pointer-events: none;
       background: linear-gradient(to bottom left, transparent calc(50% - 0.8px), var(--nb) calc(50% - 0.8px), var(--nb) calc(50% + 0.8px), transparent calc(50% + 0.8px)); }
-    .glitch { text-shadow: 1.5px 0 rgba(255,0,90,.55), -1.5px 0 rgba(0,235,255,.45); }
+    .glitch { text-shadow: none; }   /* crisp: no colour fringes */
 
     /* route strip: the one thing this page is about */
     .route { display: grid; grid-template-columns: 1fr 34px 1.25fr 34px 1fr; align-items: center; padding: 14px 12px 12px; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
@@ -76,13 +77,13 @@
     .node.warn { --nb: rgba(255,106,31,.45); }
     .node.warn .n1 { color: var(--amber); }
     .node.off { opacity: .45; }
-    .link { position: relative; height: 12px; }
+    .link { position: relative; height: 12px; overflow: hidden; }
     .link::before { content: ''; position: absolute; left: 2px; right: 2px; top: 5px; height: 2px; background: var(--border); }
-    .link.flow::before { background: repeating-linear-gradient(90deg, var(--acc) 0 6px, transparent 6px 10px); background-size: 20px 2px; animation: flow 0.9s linear infinite; filter: drop-shadow(0 0 3px var(--acc)); }
+    .link.flow::before { left: -18px; background: repeating-linear-gradient(90deg, var(--acc) 0 6px, transparent 6px 10px); animation: flow 0.9s linear infinite; will-change: transform; }
     .link.plain::before { background: var(--amber); }
     .link.cut::before { background: var(--red); left: 2px; right: 55%; }
     .link.cut::after { content: '✕'; position: absolute; left: 45%; top: -4px; color: var(--red); font-size: 13px; }
-    @keyframes flow { from { background-position: 0 0; } to { background-position: 20px 0; } }
+    @keyframes flow { from { transform: translateX(0); } to { transform: translateX(20px); } }
     @media (prefers-reduced-motion: reduce) { .link.flow::before, .live-dot, #busy-bar.on::after { animation: none; } }
 
     /* stats */
@@ -127,9 +128,10 @@
     .pill.skip { color: var(--muted); border-color: var(--border); }
     .pill.dnsc { color: var(--dnsc);  border-color: rgba(0,255,136,.35); background: rgba(0,255,136,.06); }
     .pill.ipset { color: var(--ipset); border-color: rgba(0,170,255,.4); background: rgba(0,170,255,.06); }
+    .pill.wgs { color: var(--wgs); border-color: rgba(125,211,252,.4); background: rgba(125,211,252,.06); }
     .sib { border-left: 2px solid; padding-left: 9px; }
-    .sib.dnsc { border-color: var(--dnsc); } .sib.ipset { border-color: var(--ipset); }
-    .sib.dnsc b { color: var(--dnsc) !important; } .sib.ipset b { color: var(--ipset) !important; }
+    .sib.dnsc { border-left-color: var(--dnsc); } .sib.ipset { border-left-color: var(--ipset); } .sib.wgs { border-left-color: var(--wgs); }
+    .sib.dnsc b { color: var(--dnsc) !important; } .sib.ipset b { color: var(--ipset) !important; } .sib.wgs b { color: var(--wgs) !important; }
 
     /* exit */
     .exit-box { display: flex; align-items: center; gap: 10px; }
@@ -178,6 +180,9 @@
     .fbtn.on.INFO { color: var(--acc); border-color: var(--acc-a); }
     .fbtn.on.WARN { color: var(--amber); border-color: rgba(255,106,31,.45); }
     .fbtn.on.ERROR { color: var(--red); border-color: rgba(255,68,85,.45); }
+    .fbtn.clr { margin-left: 4px; color: var(--muted); }
+    .fbtn.clr:not(.arm) { border-style: dashed; }
+    .fbtn.clr.arm { background: rgba(255,68,85,.14); color: #fff; border-color: var(--red); }
     #log-count { margin-left: auto; font-size: 9px; color: var(--muted); }
     #log-body { flex: 1; min-height: 0; margin: 0; border: none; border-radius: 0; max-height: none; padding: 8px 10px calc(env(safe-area-inset-bottom, 0px) + 36px); font-size: 9.5px; }
     .ll { display: block; } .ll .t { color: var(--muted); }
@@ -192,7 +197,7 @@
     button:active:not(:disabled) { transform: scale(.95); filter: brightness(1.5); }
     button.working { animation: btnPulse .9s ease-in-out infinite; pointer-events: none; }
     @keyframes btnPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
-    body.locked button:not(.tab):not(.fbtn):not(.working), body.locked label.sw { opacity: .5; }
+    body.locked button:not(.tab):not(.fbtn:not(.clr)):not(.working), body.locked label.sw { opacity: .5; }
     .fatal { margin: 30px 14px; padding: 16px; border: 1px solid rgba(255,68,85,.5); background: #1a0005; color: var(--red); font-size: 10px; line-height: 1.7; border-radius: 3px; }
   </style>
 </head>
@@ -309,7 +314,7 @@
 
     <div class="section">
       <div class="section-title"><span class="s-accent"></span>VPN interface</div>
-      <div class="note" style="margin-top:0">Auto follows whatever VPN Android has connected (tun0, wg-…), including server switches. Pick an interface only if you run two VPNs.</div>
+      <div class="note" style="margin-top:0">Auto follows WG Shield's tunnel when it is up, otherwise whatever VPN Android has connected (tun0, wg-…), including server switches. Pick an interface only if you run two VPNs.</div>
       <div class="seg" id="vif-seg">
         <button data-v="auto" onclick="vifMode('auto')">Auto</button>
         <button data-v="manual" onclick="vifMode('manual')">Choose</button>
@@ -354,6 +359,7 @@
       <button class="fbtn on WARN" data-l="WARN" onclick="toggleLvl(this)">Warn</button>
       <button class="fbtn on ERROR" data-l="ERROR" onclick="toggleLvl(this)">Error</button>
       <span id="log-count"></span>
+      <button class="fbtn clr" id="log-clear" onclick="clearLog(this)">Clear</button>
     </div>
     <pre class="term" id="log-body"></pre>
   </div>
@@ -416,7 +422,7 @@ async function sh(cmd, timeoutMs) {
 let _pressed = null, _pressedAt = 0, _busyN = 0, _fgEndedAt = 0;
 document.addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('button'); if (b) { _pressed = b; _pressedAt = Date.now(); } }, true);
 const BG_CMD = /^(poll|log \d)/;
-const LOCK_FREE = '.tab, .fbtn';
+const LOCK_FREE = '.tab, .fbtn:not(.clr)';
 document.addEventListener('click', e => {
   const t = e.target.closest && e.target.closest('button, label.sw, input[type=checkbox]');
   if (!t || t.matches(LOCK_FREE)) return;
@@ -480,19 +486,20 @@ function showTab(name) {
 let ST = {};
 function setBanner(cls, msg) { const b = $('banner'); b.className = cls; b.innerHTML = '<span class="live-dot"></span>' + msg; }
 
+function wgsWaiting(st) { return st.wgshield === 'enabled' && ['handshaking', 'down'].includes(st.wgshield_state); }
 function renderRoute(st) {
   const tl = tethers(st), n = st.client.length;
   const nodes = { cli: $('rn-cli'), vpn: $('rn-vpn'), net: $('rn-net') }, l1 = $('rl-1'), l2 = $('rl-2');
   const set = (el, cls) => { el.className = 'node clip ' + cls; };
   const setL = (el, cls) => { el.className = 'link ' + cls; };
   $('rn-cli2').textContent = tl.length ? tl.map(t => t.ifc).join(' ') + ' · ' + n + (n === 1 ? ' device' : ' devices') : 'hotspot off';
-  $('rn-vpn1').textContent = st.vpn || 'VPN';
-  $('rn-vpn2').textContent = st.vpn ? 'table ' + st.vpn_table : 'not connected';
+  $('rn-vpn1').textContent = st.wgs_tunnel || st.vpn || 'VPN';
+  $('rn-vpn2').textContent = st.wgs_tunnel ? 'WG Shield · ' + st.vpn : st.vpn ? 'table ' + st.vpn_table : 'not connected';
   $('rn-net2').textContent = EXIT.ip ? EXIT.ip : (st.state === 'vpn' ? 'via tunnel' : '—');
   switch (st.state) {
     case 'vpn': set(nodes.cli, 'on'); set(nodes.vpn, 'on'); set(nodes.net, 'on'); setL(l1, 'flow'); setL(l2, 'flow'); break;
     case 'blocked': set(nodes.cli, 'on'); set(nodes.vpn, 'warn'); set(nodes.net, 'off'); setL(l1, 'cut'); setL(l2, ''); if (st.tunnel === 'dead') $('rn-vpn2').textContent = 'not responding'; break;
-    case 'passthrough': set(nodes.cli, 'warn'); set(nodes.vpn, 'off'); set(nodes.net, 'warn'); setL(l1, 'plain'); setL(l2, 'plain'); $('rn-vpn2').textContent = 'bypassed'; break;
+    case 'passthrough': set(nodes.cli, 'warn'); set(nodes.vpn, 'off'); set(nodes.net, 'warn'); setL(l1, 'plain'); setL(l2, 'plain'); $('rn-vpn2').textContent = st.wgs_direct ? 'WG Shield ' + st.wgs_direct : 'bypassed'; break;
     default: set(nodes.cli, 'off'); set(nodes.vpn, st.vpn ? 'on' : 'off'); set(nodes.net, 'off'); setL(l1, ''); setL(l2, '');
   }
 }
@@ -503,10 +510,13 @@ function renderBanner(st) {
   switch (st.state) {
     case 'vpn':
       if (st.rules === 'repairing') setBanner('b-warn', 'Rules changed by the system — repairing');
-      else setBanner('', `Hotspot devices use ${esc(st.vpn)}` + (st.dns === 'fallback' ? ` · DNS ${esc(st.fallback_dns)} via tunnel` : ''));
+      else setBanner('', `Hotspot devices use ${st.wgs_tunnel ? 'WG Shield · ' + esc(st.wgs_tunnel) : esc(st.vpn)}` + (st.dns === 'fallback' ? ` · DNS ${esc(st.fallback_dns)} via tunnel` : ''));
       break;
-    case 'blocked': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch holds: devices have no internet'); break;
-    case 'passthrough': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch is off: devices use your connection directly'); break;
+    case 'blocked': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : wgsWaiting(st) ? 'WG Shield is ' + esc(st.wgshield_state) : 'No VPN') + ' — kill switch holds: devices have no internet'); break;
+    case 'passthrough':
+      if (st.wgs_direct) setBanner('b-idle', `WG Shield is ${esc(st.wgs_direct)} — devices use your connection directly, like the phone`);
+      else setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch is off: devices use your connection directly');
+      break;
     case 'idle': setBanner('b-idle', 'Hotspot is off' + (st.vpn ? ` · VPN ${esc(st.vpn)} ready` : '')); break;
     case 'disabled': setBanner('b-idle', 'Turned off in Settings — tethering is Android\'s normal one'); break;
     default: setBanner('b-idle', 'Waiting for the watchdog…');
@@ -524,7 +534,7 @@ const CHECKS = [
 ];
 function renderProtection(st) {
   if (st.state !== 'vpn' && st.state !== 'blocked') {
-    $('prot-body').innerHTML = '<div class="empty">' + (st.state === 'passthrough' ? 'Nothing active: kill switch is off and there is no VPN.' : 'Nothing to protect right now — rules are installed when the hotspot is on.') + '</div>';
+    $('prot-body').innerHTML = '<div class="empty">' + (st.state === 'passthrough' ? (st.wgs_direct ? 'Nothing active: you turned WG Shield ' + esc(st.wgs_direct === 'paused' ? 'on pause' : 'off') + ', devices go direct like the phone.' : 'Nothing active: kill switch is off and there is no VPN.') : 'Nothing to protect right now — rules are installed when the hotspot is on.') + '</div>';
     $('prot-note').textContent = ''; $('dash-dot').className = 'tab-dot'; return;
   }
   let bad = 0;
@@ -554,7 +564,10 @@ function renderSet(st) {
   };
   $('set-body').innerHTML =
     sib('dnsc', 'DNSCrypt Proxy', dn, st.dnscrypt_hotspot === '1' || st.local_dns === '1', 'Encrypts and filters devices\' DNS; its queries go through this tunnel.', `Devices' DNS goes to ${esc(st.set_FALLBACK_DNS || '9.9.9.9')} through the tunnel instead.`) +
-    sib('ipset', 'ipset', ip, st.ipset_forward === '1', 'Blocks listed IP ranges for devices before they reach the tunnel.', 'No IP blocklists for devices.');
+    sib('ipset', 'ipset', ip, st.ipset_forward === '1', 'Blocks listed IP ranges for devices before they reach the tunnel.', 'No IP blocklists for devices.') +
+    sib('wgs', 'WG Shield', st.wgshield, st.vpn_source === 'wg-shield', 'Its tunnel (' + esc(st.wgs_tunnel) + ') carries the devices; switching its server needs nothing here.', 'Kernel WireGuard without an app — used automatically when its tunnel is up.')
+      .replace('<span class="pill warn">not filtering</span>', st.wgshield === 'enabled' && st.vpn_source !== 'wg-shield' ? `<span class="pill skip">${esc(st.wgshield_state || 'off')}</span>` : '<span class="pill warn">not filtering</span>')
+      .replace('Installed, but its hotspot rules are not in place right now.', st.wgs_direct ? 'Turned ' + (st.wgs_direct === 'paused' ? 'on pause' : 'off') + ' by you — devices go direct, like the phone.' : st.wgshield_state === 'paused' ? 'Paused — another VPN is connected, which is used instead.' : 'Its tunnel is not up; devices follow the kill switch.');
 }
 
 function renderStats(st) {
@@ -720,7 +733,23 @@ async function checkExit() {
 const LVL = { INFO: true, WARN: true, ERROR: true };
 let LOGTXT = '';
 function toggleLvl(b) { LVL[b.dataset.l] = !LVL[b.dataset.l]; b.classList.toggle('on', LVL[b.dataset.l]); drawLog(); }
-async function loadLog() { LOGTXT = await ctl('log 300', 15000); drawLog(); }
+let _logGen = 0;   // a load that started before Clear must not bring the old lines back
+async function loadLog() { const g = _logGen; const t = await ctl('log 300', 15000); if (g !== _logGen) return; LOGTXT = t; drawLog(); }
+// Clear: first tap arms the button ("Sure?"), a second tap within 3 s empties the log.
+let _clrTimer = null;
+function _clrReset(b) { clearTimeout(_clrTimer); _clrTimer = null; b.classList.remove('arm'); b.textContent = 'Clear'; }
+async function clearLog(b) {
+  if (!b.classList.contains('arm')) {
+    b.classList.add('arm'); b.textContent = 'Sure?';
+    _clrTimer = setTimeout(() => _clrReset(b), 3000);
+    return;
+  }
+  _clrReset(b);
+  _logGen++;
+  const r = parseKV(await ctl('log clear', 15000));
+  if (r.ok === '1') { _logGen++; LOGTXT = ''; drawLog(); toast('Log cleared', 'ok'); }
+  else toast(r.error || 'Could not clear the log', 'err');
+}
 function drawLog() {
   const lines = LOGTXT.split('\n').filter(Boolean).reverse();
   let shown = 0;

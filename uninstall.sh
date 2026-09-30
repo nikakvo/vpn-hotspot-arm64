@@ -35,3 +35,4 @@ fi
 rm -rf /data/adb/vpn-hotspot-state
 rm -f /data/adb/vpn-hotspot.conf /data/adb/vpn-hotspot.conf.tmp
 rm -f /data/adb/vpn-hotspot.log /data/adb/vpn-hotspot.log.tmp
+rm -f /data/adb/vpn-hotspot-last-source

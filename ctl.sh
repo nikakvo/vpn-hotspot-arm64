@@ -39,6 +39,7 @@ cmd_status() {
   echo "dnscrypt_hotspot=$([ "$(_jcount "$S_F" FORWARD DNSC_HS_FWD)" -gt 0 ] && echo 1 || echo 0)"
   echo "local_dns=$(_yn local_dns_active "$S_N")"
   echo "ipset=$(sibling_state ipset_arm64 ipset-arm64)"
+  echo "wgshield=$(sibling_state wg-shield)"
   echo "ipset_forward=$([ "$(_jcount "$S_F" FORWARD IPSA_FWD)" -gt 0 ] && echo 1 || echo 0)"
   echo "clients=$(vhs_clients | grep -c .)"
   echo "ok=1"
@@ -65,6 +66,8 @@ cmd_poll() {
   echo "events=$([ "$_ma" = 1 ] && echo on || echo off)"
   echo "dnscrypt=$(sibling_state dnscrypt-proxy-android)"
   echo "ipset=$(sibling_state ipset_arm64 ipset-arm64)"
+  echo "wgshield=$(sibling_state wg-shield)"
+  echo "wgshield_state=$(sed -n 's/^state=//p' "$WGS_STATUS" 2>/dev/null | head -n 1)"
   _ti=""
   for _e in $(sed -n 's/^tethers=//p' "$STATUS_FILE" 2>/dev/null); do _ti="$_ti ${_e%%=*}"; done
   # shellcheck disable=SC2086
@@ -178,6 +181,7 @@ VPN Hotspot - ctl.sh
   clients             connected clients: iface ip mac state
   sync                re-check now; "sync force" rebuilds everything
   log [N]             last N log lines (default 50)
+  log clear           empty the log
   diag                full report for troubleshooting
 EOF
 }
@@ -191,7 +195,12 @@ case "$1" in
   sync)
     if [ "$2" = force ]; then vhs_sync 1; else vhs_sync; fi
     cat "$STATUS_FILE" 2>/dev/null; echo "ok=1" ;;
-  log) tail -n "${2:-50}" "$LOG" 2>/dev/null ;;
+  log)
+    case "$2" in
+      clear)
+        if log_clear 2>/dev/null; then echo "ok=1"; else echo "ok=0"; echo "error=cannot write $LOG"; exit 1; fi ;;
+      *) tail -n "${2:-50}" "$LOG" 2>/dev/null ;;
+    esac ;;
   diag) vhs_snap; vhs_plan >/dev/null 2>&1; cmd_diag ;;
   help | -h | --help | "") cmd_help ;;
   *) echo "ok=0"; echo "error=unknown command: $1"; exit 2 ;;

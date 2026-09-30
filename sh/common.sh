@@ -48,6 +48,9 @@ TUNNEL_FILE="$STATE_DIR/tunnel"
 # Cuts clients' conntrack entries (see src/vhs-ctflush.c)
 CTFLUSH="$MODDIR/bin/vhs-ctflush"
 LAST_VPN_FILE="$STATE_DIR/last_vpn"   # tunnel the clients used last
+# Which kind of VPN the clients used last (wg-shield | android). Kept across
+# reboots: it decides whether "WG Shield turned off" means "go direct".
+LAST_SRC_FILE="${VHS_LAST_SRC:-/data/adb/vpn-hotspot-last-source}"
 
 # ip rule priorities. Android's tether rule is 21000 ("iif <tether> lookup
 # <upstream>"); everything here sits just above it so it wins, and below
@@ -136,13 +139,23 @@ log_info()  { echo "$(_ts) [INFO] $*"  >> "$LOG"; }
 log_warn()  { echo "$(_ts) [WARN] $*"  >> "$LOG"; }
 log_error() { echo "$(_ts) [ERROR] $*" >> "$LOG"; }
 
-log_trim() { # keep the last 1000 lines
+# Keep the last 1000 lines. Runs at boot and every few minutes in the
+# watchdog (the log used to be trimmed only at boot and grew until the next
+# reboot).
+log_trim() {
   [ -f "$LOG" ] || return 0
   _lc=$(wc -l < "$LOG" 2>/dev/null)
   if [ "${_lc:-0}" -gt 1200 ] 2>/dev/null; then
     tail -n 1000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv -f "$LOG.tmp" "$LOG"
   fi
   unset _lc
+}
+
+# Empty the log in place (same file, same owner/mode); writers append on
+# every line, so the next line simply starts the new log.
+log_clear() {
+  rm -f "$LOG.tmp"
+  : > "$LOG"
 }
 
 # ── Tools ────────────────────────────────────────────────────────────────────
@@ -403,8 +416,13 @@ vpn_candidates() { # -> table names/ids, best first (no duplicates)
 }
 
 vpn_detect() {
-  VPN_IF=""; VPN_TID=""; VPN_MTU=""
+  VPN_IF=""; VPN_TID=""; VPN_MTU=""; WGS_TUNNEL=""
   _vs=$(conf_get VPN_IFACE)
+  # WG Shield first: in auto mode, or when its interface is chosen by hand
+  if [ "$_vs" = auto ] || [ "$_vs" = wgs0 ]; then
+    wgs_detect && { unset _vs; return 0; }
+    [ "$_vs" = wgs0 ] && { unset _vs; return 1; }
+  fi
   if [ "$_vs" = auto ]; then
     # Every VPN uid rule, in order: a stale one left by netd (its
     # interface gone) must not hide the VPN that is really up.
@@ -432,6 +450,58 @@ vpn_detect() {
   done
   unset _vs _vc _vt _vn _vid
   return 1
+}
+
+# WG Shield Arm64 (kernel WireGuard module of the same set) routes the phone
+# with its own policy rules: Android knows no VPN, so none of the rules
+# above name it. It publishes its tunnel in a status file (contract, stable):
+#   state=up|handshaking|down|paused|off|error  iface=wgs0  table=51820
+#   tunnel=<name>  endpoint=<ip:port>  ...
+# Used only while it says "up" and its interface and table really route; in
+# every other state it counts as no VPN (clients: kill switch). While a VPN
+# app is connected WG Shield pauses itself, so Android's VPN is found instead.
+WGS_MODDIR="${VHS_WGS_MODDIR:-/data/adb/modules/wg-shield}"
+WGS_STATUS="${VHS_WGS_STATUS:-/data/adb/wg-shield-state/status}"
+WGS_TUNNEL=""
+wgs_detect() {
+  WGS_TUNNEL=""
+  [ -f "$WGS_MODDIR/module.prop" ] && [ ! -f "$WGS_MODDIR/disable" ] && [ ! -f "$WGS_MODDIR/remove" ] || return 1
+  _ws=""; _wi=""; _wt=""; _wn=""
+  while IFS='=' read -r _k _v; do
+    case "$_k" in state) _ws=$_v ;; iface) _wi=$_v ;; table) _wt=$_v ;; tunnel) _wn=$_v ;; esac
+  done 2>/dev/null < "$WGS_STATUS"
+  _wr=1
+  if [ "$_ws" = up ] && [ -n "$_wi" ] && [ -n "$_wt" ] && [ -d "/sys/class/net/$_wi" ] && _if_up "$_wi" &&
+     ip route show table "$_wt" 2>/dev/null | grep -qE "^default .*dev $_wi( |\$)"; then
+    VPN_IF=$_wi; VPN_TID=$_wt; WGS_TUNNEL=${_wn:-WG Shield}
+    VPN_MTU=$(cat "/sys/class/net/$_wi/mtu" 2>/dev/null)
+    case "$VPN_MTU" in '' | *[!0-9]*) VPN_MTU=1420 ;; esac
+    _wr=0
+  fi
+  unset _ws _wi _wt _wn _k _v
+  return $_wr
+}
+
+# The user turned WG Shield off or paused it (not a failure): the phone goes
+# direct, and so do the clients - but only when WG Shield was the VPN the
+# clients used last. A VPN app that drops is never taken as "off by the user".
+# Sets WGS_DIRECT (off | paused) when it applies.
+WGS_DIRECT=""
+wgs_direct() {
+  WGS_DIRECT=""
+  [ -f "$WGS_MODDIR/module.prop" ] && [ ! -f "$WGS_MODDIR/disable" ] && [ ! -f "$WGS_MODDIR/remove" ] || return 1
+  _ls=""; read -r _ls 2>/dev/null < "$LAST_SRC_FILE"
+  [ "$_ls" = wg-shield ] || { unset _ls; return 1; }
+  _ws=""; _wr=""
+  while IFS='=' read -r _k _v; do
+    case "$_k" in state) _ws=$_v ;; reason) _wr=$_v ;; esac
+  done 2>/dev/null < "$WGS_STATUS"
+  case "$_ws" in
+    off) WGS_DIRECT=off ;;
+    paused) [ "$_wr" = user ] && WGS_DIRECT=paused ;;
+  esac
+  unset _ls _ws _wr _k _v
+  [ -n "$WGS_DIRECT" ]
 }
 
 # ── Tunnel health ────────────────────────────────────────────────────────────
