@@ -211,3 +211,9 @@ Remove the module in your root manager and reboot. Every rule is removed at once
 ```sh
 zig cc -target aarch64-linux-musl -static -Os -o bin/vhs-ctflush src/vhs-ctflush.c
 ```
+
+---
+
+  ## License
+
+  [MIT](LICENSE)
