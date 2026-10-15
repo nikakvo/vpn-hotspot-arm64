@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0-r14
+
+**Module**
+- New card banner in the root manager (SukiSU-Ultra and other managers that support module banners).
+
+No functional changes - hotspot and USB-tethering routing through the VPN, the kill switch and the WebUI work exactly as in 1.0-r13. Updating is optional.
+
+---
+
 Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU), with WireGuard (kernel backend) and v2rayNG. Part of a set with DNSCrypt Proxy Arm64, ipset-arm64 and WG Shield Arm64.
 
 ## 1.0-r13
