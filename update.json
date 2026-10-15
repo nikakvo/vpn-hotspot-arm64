@@ -1,6 +1,6 @@
 {
-  "version": "1.0-r13",
-  "versionCode": 13,
-  "zipUrl": "https://github.com/nikakvo/vpn-hotspot-arm64/releases/download/v1.0-r13/vpn-hotspot-arm64-v1.0-r13.zip",
+  "version": "1.0-r14",
+  "versionCode": 14,
+  "zipUrl": "https://github.com/nikakvo/vpn-hotspot-arm64/releases/download/v1.0-r14/vpn-hotspot-arm64-v1.0-r14.zip",
   "changelog": "https://raw.githubusercontent.com/nikakvo/vpn-hotspot-arm64/main/CHANGELOG.md"
 }
