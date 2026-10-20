@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="vpn-hotspot.png" alt="VPN Hotspot Arm64" width="640">
-</p>
+<p align="center"><img src="vpn-hotspot.png" alt="VPN Hotspot Arm64"></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/ARM64-only-fcee0a?style=flat-square" />
