@@ -32,6 +32,8 @@ else
   while ip6tables -w -D FORWARD -j VHS_FWD6 2>/dev/null; do :; done
   ip6tables -w -F VHS_FWD6 2>/dev/null; ip6tables -w -X VHS_FWD6 2>/dev/null
 fi
+rm -rf /data/adb/vpn-hotspot
+# r14 and older (before the first boot of r15 moved them)
 rm -rf /data/adb/vpn-hotspot-state
 rm -f /data/adb/vpn-hotspot.conf /data/adb/vpn-hotspot.conf.tmp
 rm -f /data/adb/vpn-hotspot.log /data/adb/vpn-hotspot.log.tmp

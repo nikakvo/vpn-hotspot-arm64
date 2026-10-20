@@ -5,7 +5,9 @@
 MODDIR=${0%/*}
 [ -f "$MODDIR/sh/common.sh" ] || exit 0
 . "$MODDIR/sh/common.sh"
-mkdir -p "$STATE_DIR"
+# r15: one folder - the first boot after an update moves the old files
+layout_migrate
+mkdir -p "$STATE_DIR" "$LOGS_DIR"
 rm -rf "$LOCK_DIR"
 rm -f "$WD_PIDFILE" "$MON_PIDFILE" "$MON_FIFO" "$TICK_FILE" "$STATUS_FILE" \
       "$APPLIED_FILE" "$IPT_WAIT_FILE" "$STATE_DIR/events" "$STATE_DIR/since" "$STATE_DIR/netd_busy" "$STATE_DIR/tunnel" "$STATE_DIR/last_vpn" "$STATE_DIR/iptr_wait"

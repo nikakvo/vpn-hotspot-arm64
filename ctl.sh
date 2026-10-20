@@ -67,7 +67,7 @@ cmd_poll() {
   echo "dnscrypt=$(sibling_state dnscrypt-proxy-android)"
   echo "ipset=$(sibling_state ipset_arm64 ipset-arm64)"
   echo "wgshield=$(sibling_state wg-shield)"
-  echo "wgshield_state=$(sed -n 's/^state=//p' "$WGS_STATUS" 2>/dev/null | head -n 1)"
+  echo "wgshield_state=$(sed -n 's/^state=//p' "$(wgs_status_file)" 2>/dev/null | head -n 1)"
   _ti=""
   for _e in $(sed -n 's/^tethers=//p' "$STATUS_FILE" 2>/dev/null); do _ti="$_ti ${_e%%=*}"; done
   # shellcheck disable=SC2086
@@ -199,7 +199,9 @@ case "$1" in
     case "$2" in
       clear)
         if log_clear 2>/dev/null; then echo "ok=1"; else echo "ok=0"; echo "error=cannot write $LOG"; exit 1; fi ;;
-      *) tail -n "${2:-50}" "$LOG" 2>/dev/null ;;
+      '' | *[!0-9]*) [ -z "$2" ] || { echo "ok=0"; echo "error=log takes a number of lines or clear"; exit 2; }
+         tail -n 50 "$LOG" 2>/dev/null ;;
+      *) tail -n "$2" "$LOG" 2>/dev/null ;;
     esac ;;
   diag) vhs_snap; vhs_plan >/dev/null 2>&1; cmd_diag ;;
   help | -h | --help | "") cmd_help ;;

@@ -11,10 +11,24 @@ MODULE_ID="vpn-hotspot"
 MODDIR="${MODDIR:-/data/adb/modules/$MODULE_ID}"
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-CONF="/data/adb/vpn-hotspot.conf"
-STATE_DIR="/data/adb/vpn-hotspot-state"
-LOG="/data/adb/vpn-hotspot.log"
+# 1.0-r15: everything in ONE folder (up to r14 it was four entries spread
+# over /data/adb - see LEGACY_* and layout_migrate):
+#   /data/adb/vpn-hotspot/
+#     settings.conf   settings
+#     last-source     the kind of VPN the clients used last (kept on reboot)
+#     logs/           vpn-hotspot.log
+#     state/          runtime files, cleared at boot (status: read by WG Shield)
+DATA_DIR="/data/adb/vpn-hotspot"
+CONF="$DATA_DIR/settings.conf"
+STATE_DIR="$DATA_DIR/state"
+LOGS_DIR="$DATA_DIR/logs"
+LOG="$LOGS_DIR/vpn-hotspot.log"
 MODPROP="$MODDIR/module.prop"
+
+LEGACY_CONF="/data/adb/vpn-hotspot.conf"
+LEGACY_STATE_DIR="/data/adb/vpn-hotspot-state"
+LEGACY_LOG="/data/adb/vpn-hotspot.log"
+LEGACY_LAST_SRC="/data/adb/vpn-hotspot-last-source"
 
 WD_PIDFILE="$STATE_DIR/watchdog.pid"
 MON_PIDFILE="$STATE_DIR/monitor.pid"
@@ -50,7 +64,7 @@ CTFLUSH="$MODDIR/bin/vhs-ctflush"
 LAST_VPN_FILE="$STATE_DIR/last_vpn"   # tunnel the clients used last
 # Which kind of VPN the clients used last (wg-shield | android). Kept across
 # reboots: it decides whether "WG Shield turned off" means "go direct".
-LAST_SRC_FILE="${VHS_LAST_SRC:-/data/adb/vpn-hotspot-last-source}"
+LAST_SRC_FILE="${VHS_LAST_SRC:-$DATA_DIR/last-source}"
 
 # ip rule priorities. Android's tether rule is 21000 ("iif <tether> lookup
 # <upstream>"); everything here sits just above it so it wins, and below
@@ -136,6 +150,7 @@ conf_init() {
 # ── Logging ──────────────────────────────────────────────────────────────────
 _ts() { date '+%Y-%m-%d %H:%M:%S'; }
 log_info()  { echo "$(_ts) [INFO] $*"  >> "$LOG"; }
+# (logs/ is created at boot by post-fs-data and by the installer)
 log_warn()  { echo "$(_ts) [WARN] $*"  >> "$LOG"; }
 log_error() { echo "$(_ts) [ERROR] $*" >> "$LOG"; }
 
@@ -461,7 +476,14 @@ vpn_detect() {
 # every other state it counts as no VPN (clients: kill switch). While a VPN
 # app is connected WG Shield pauses itself, so Android's VPN is found instead.
 WGS_MODDIR="${VHS_WGS_MODDIR:-/data/adb/modules/wg-shield}"
-WGS_STATUS="${VHS_WGS_STATUS:-/data/adb/wg-shield-state/status}"
+# WG Shield 1.0-r4+ keeps its status in /data/adb/wg-shield/state/, older
+# versions in /data/adb/wg-shield-state/. Chosen on every read: WG Shield can
+# be updated while this watchdog runs.
+WGS_STATUS_NEW="${VHS_WGS_STATUS:-/data/adb/wg-shield/state/status}"
+WGS_STATUS_OLD="${VHS_WGS_STATUS_OLD:-/data/adb/wg-shield-state/status}"
+wgs_status_file() {
+  if [ -f "$WGS_STATUS_NEW" ]; then echo "$WGS_STATUS_NEW"; else echo "$WGS_STATUS_OLD"; fi
+}
 WGS_TUNNEL=""
 wgs_detect() {
   WGS_TUNNEL=""
@@ -469,7 +491,7 @@ wgs_detect() {
   _ws=""; _wi=""; _wt=""; _wn=""
   while IFS='=' read -r _k _v; do
     case "$_k" in state) _ws=$_v ;; iface) _wi=$_v ;; table) _wt=$_v ;; tunnel) _wn=$_v ;; esac
-  done 2>/dev/null < "$WGS_STATUS"
+  done 2>/dev/null < "$(wgs_status_file)"
   _wr=1
   if [ "$_ws" = up ] && [ -n "$_wi" ] && [ -n "$_wt" ] && [ -d "/sys/class/net/$_wi" ] && _if_up "$_wi" &&
      ip route show table "$_wt" 2>/dev/null | grep -qE "^default .*dev $_wi( |\$)"; then
@@ -495,7 +517,7 @@ wgs_direct() {
   _ws=""; _wr=""
   while IFS='=' read -r _k _v; do
     case "$_k" in state) _ws=$_v ;; reason) _wr=$_v ;; esac
-  done 2>/dev/null < "$WGS_STATUS"
+  done 2>/dev/null < "$(wgs_status_file)"
   case "$_ws" in
     off) WGS_DIRECT=off ;;
     paused) [ "$_wr" = user ] && WGS_DIRECT=paused ;;
@@ -579,6 +601,38 @@ wake_watchdog() { _p=$(wd_pid); [ -n "$_p" ] && kill -USR1 "$_p" 2>/dev/null; un
 # A settings change: the watchdog applies it at once (no settle wait).
 # Returns 1 when no watchdog runs - the caller applies it itself.
 apply_now() { _p=$(wd_pid); [ -n "$_p" ] && kill -USR2 "$_p" 2>/dev/null; _r=$?; unset _p; return $_r; }
+
+# ── r15 layout migration ─────────────────────────────────────────────────────
+# First thing post-fs-data does. The installer only COPIED the settings into
+# the new folder - the old version keeps running with the old paths until
+# the reboot - so the newer copy of each file wins, then the old ones go.
+# Idempotent: nothing to do after the first boot.
+mtime_of() { stat -c %Y "$1" 2>/dev/null || echo 0; }
+_lm_take() { # <old> <new> -> 0 if the old one was taken
+  [ -e "$1" ] || return 1
+  if [ ! -e "$2" ] || [ "$(mtime_of "$1")" -gt "$(mtime_of "$2")" ]; then
+    mkdir -p "${2%/*}" 2>/dev/null
+    rm -rf "$2" 2>/dev/null
+    mv -f "$1" "$2" 2>/dev/null && return 0
+  fi
+  rm -rf "$1" 2>/dev/null
+  return 1
+}
+layout_migrate() {
+  mkdir -p "$STATE_DIR" "$LOGS_DIR" 2>/dev/null
+  [ -e "$LEGACY_CONF" ] || [ -e "$LEGACY_LOG" ] || [ -e "$LEGACY_STATE_DIR" ] || [ -e "$LEGACY_LAST_SRC" ] || return 0
+  _lm_took=""
+  _lm_take "$LEGACY_CONF" "$CONF" && _lm_took="$_lm_took settings"
+  _lm_take "$LEGACY_LAST_SRC" "$LAST_SRC_FILE" && _lm_took="$_lm_took last-source"
+  if [ -f "$LEGACY_LOG" ]; then     # the old log is the history: keep it first
+    [ -f "$LOG" ] && cat "$LOG" >> "$LEGACY_LOG" 2>/dev/null
+    mv -f "$LEGACY_LOG" "$LOG" 2>/dev/null && _lm_took="$_lm_took log"
+  fi
+  rm -f "$LEGACY_CONF.tmp" "$LEGACY_LOG.tmp" 2>/dev/null
+  rm -rf "$LEGACY_STATE_DIR" 2>/dev/null   # runtime only, rebuilt every boot
+  log_info "files moved into one folder, $DATA_DIR. Taken from the old places:${_lm_took:- nothing newer}"
+  unset _lm_took
+}
 
 # ── Module status line (description in the root manager) ─────────────────────
 DESC_BASE="Routes hotspot and tethering clients through the phone's VPN, with kill switch."

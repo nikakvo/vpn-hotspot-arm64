@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0-r15
+
+One folder for everything, and works with WG Shield 1.0-r4.
+
+* **One folder.** The module used to keep four things in `/data/adb` (`vpn-hotspot.conf`, `vpn-hotspot.log`, `vpn-hotspot-state/`, `vpn-hotspot-last-source`). Now there is only `/data/adb/vpn-hotspot/` with `settings.conf`, `last-source`, `logs/` and `state/`. The update moves everything at the first boot and keeps any change made between flashing and rebooting
+* **WG Shield 1.0-r4** keeps its status file in `/data/adb/wg-shield/state/`. VPN Hotspot reads it there and still at the old place, so devices go through WG Shield's tunnel with any version of it
+* `ctl.sh log` refuses anything that is not a number of lines (or `clear`)
+* README: banner; command-line examples use the full form `su -c '/system/bin/sh …/ctl.sh …'`
+
+Tested in network namespaces with real iptables (mksh and busybox): devices through an Android VPN and through WG Shield (status file at the new and the old place), kill switch, WG Shield turned off by the user, migration from 1.0-r14, uninstall.
+
+---
+
 ## 1.0-r14
 
 **Module**

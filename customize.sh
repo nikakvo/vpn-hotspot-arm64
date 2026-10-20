@@ -45,6 +45,18 @@ esac
 unset _mon
 
 # ── Settings ─────────────────────────────────────────────────────────────────
+# r15: one folder, /data/adb/vpn-hotspot/. From r14 or older the settings
+# and the last VPN kind are COPIED here (the old version still runs with the
+# old paths until the reboot); the first boot moves the rest
+# (layout_migrate) and keeps whatever changed meanwhile.
+mkdir -p "$STATE_DIR" "$LOGS_DIR"
+if [ -f "$LEGACY_CONF" ] && [ ! -f "$CONF" ]; then
+  cp -p "$LEGACY_CONF" "$CONF" 2>/dev/null
+  ui_print "- New folder layout: everything now lives in $DATA_DIR (the old files are moved at the next boot)"
+fi
+if [ -f "$LEGACY_LAST_SRC" ] && [ ! -f "$LAST_SRC_FILE" ]; then
+  cp -p "$LEGACY_LAST_SRC" "$LAST_SRC_FILE" 2>/dev/null
+fi
 if [ -f "$CONF" ]; then
   ui_print "- Keeping your settings ($CONF)"
 else
@@ -81,5 +93,5 @@ unset _f
 
 ui_print " "
 ui_print "- Done. Reboot, then turn on the hotspot with your VPN connected."
-ui_print "  Status: su -c \"sh /data/adb/modules/vpn-hotspot/ctl.sh status\""
+ui_print "  Status: su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh status'"
 ui_print " "

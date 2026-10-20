@@ -209,19 +209,21 @@ sh /data/adb/modules/vpn-hotspot/ctl.sh diag       <span class="cm"># full repor
   <h3>The VPN app fails to connect or disconnect</h3>
   <p>Turn the module off in Settings, then retry. If the VPN now works, send the <strong>Report</strong> and the VPN app's own log. If it still fails, reboot: Android may have kept a half-removed VPN network.</p>
   <h3>Watchdog not running</h3>
-  <p>Reboot. If it stays stopped, the log (Log tab, or <code>/data/adb/vpn-hotspot.log</code>) says why.</p>
+  <p>Reboot. If it stays stopped, the log (Log tab, or <code>/data/adb/vpn-hotspot/logs/vpn-hotspot.log</code>) says why.</p>
 </div>
 
 <div class="sec-title" id="files">11 · files, update, uninstall</div>
 <div class="box">
   <div class="tw"><table>
     <tr><th>file</th><th></th></tr>
-    <tr><td>/data/adb/vpn-hotspot.conf</td><td>Settings (kept on update)</td></tr>
-    <tr><td>/data/adb/vpn-hotspot.log</td><td>Log (last 1000 lines; <strong>Clear</strong> in the Log tab empties it)</td></tr>
-    <tr><td>/data/adb/vpn-hotspot-state/</td><td>Runtime state, cleared at boot</td></tr>
+    <tr><td>/data/adb/vpn-hotspot/</td><td>Everything the module keeps, in one folder:</td></tr>
+    <tr><td>settings.conf</td><td>Settings (kept on update)</td></tr>
+    <tr><td>last-source</td><td>Which VPN the devices used last (WG Shield or an app) - kept across reboots</td></tr>
+    <tr><td>logs/vpn-hotspot.log</td><td>Log (last 1000 lines; <strong>Clear</strong> in the Log tab empties it)</td></tr>
+    <tr><td>state/</td><td>Runtime state, cleared at boot</td></tr>
   </table></div>
   <p><strong>Update:</strong> flash the new zip, reboot. Until the reboot the old version keeps devices routed.</p>
-  <p><strong>Uninstall:</strong> every rule is removed at once, then settings and log are deleted. Tethering is Android's normal one again.</p>
+  <p><strong>Uninstall:</strong> every rule is removed at once, then the folder (settings and log) is deleted. Tethering is Android's normal one again.</p>
 </div>
 
 <div class="footer">VPN Hotspot Arm64 · by Tears Burn · <a href="index.html">back to dashboard</a></div>

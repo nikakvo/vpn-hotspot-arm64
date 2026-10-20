@@ -1,6 +1,10 @@
 <p align="center">
+  <img src="vpn-hotspot.png" alt="VPN Hotspot Arm64" width="640">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/ARM64-only-fcee0a?style=flat-square" />
-  <img src="https://img.shields.io/badge/v1.0--r13-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/v1.0--r15-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/SukiSU%20%2F%20KernelSU%20%2F%20Magisk-compatible-brightgreen?style=flat-square" />
   <img src="https://img.shields.io/badge/WebUI-built%20in-fcee0a?style=flat-square" />
 </p>
@@ -154,10 +158,11 @@ internet
 
 | Path | |
 |---|---|
-| `/data/adb/vpn-hotspot.conf` | Settings |
-| `/data/adb/vpn-hotspot.log` | Log (last 1000 lines) |
-| `/data/adb/vpn-hotspot-state/` | Runtime state, cleared at boot |
-| `/data/adb/vpn-hotspot-last-source` | Which kind of VPN devices used last (WG Shield or an app) — decides whether "WG Shield off" means "go direct" |
+| `/data/adb/vpn-hotspot/` | Everything the module keeps, in one folder: |
+| `  settings.conf` | Settings |
+| `  last-source` | Which kind of VPN devices used last (WG Shield or an app) - decides whether "WG Shield off" means "go direct" |
+| `  logs/vpn-hotspot.log` | Log (last 1000 lines) |
+| `  state/` | Runtime state, cleared at boot |
 | `bin/vhs-ctflush` | Ends devices' old direct connections — static arm64, source in `src/` |
 
 ---
@@ -165,16 +170,16 @@ internet
 ## Command line
 
 ```sh
-# as root
-sh /data/adb/modules/vpn-hotspot/ctl.sh status
-sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0
-sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto
-sh /data/adb/modules/vpn-hotspot/ctl.sh clients
-sh /data/adb/modules/vpn-hotspot/ctl.sh exitip
-sh /data/adb/modules/vpn-hotspot/ctl.sh sync          # check now
-sh /data/adb/modules/vpn-hotspot/ctl.sh sync force    # rebuild everything
-sh /data/adb/modules/vpn-hotspot/ctl.sh log 100
-sh /data/adb/modules/vpn-hotspot/ctl.sh diag          # full report
+# from Termux
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh status'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh clients'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh exitip'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync'   # check now
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync force'   # rebuild everything
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh log 100'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   # full report
 ```
 
 ---

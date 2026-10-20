@@ -19,7 +19,7 @@ VHS_HEALTH_UPDATE=1   # only the watchdog measures the tunnel
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 2; done
 
-mkdir -p "$STATE_DIR"
+mkdir -p "$STATE_DIR" "$LOGS_DIR"
 conf_init
 log_trim
 
