@@ -180,18 +180,18 @@
 
 <div class="sec-title" id="cli">9 · command line</div>
 <div class="box">
-<pre><span class="cm"># as root</span>
-sh /data/adb/modules/vpn-hotspot/ctl.sh status
-sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0
-sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto
-sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 9.9.9.9
-sh /data/adb/modules/vpn-hotspot/ctl.sh clients
-sh /data/adb/modules/vpn-hotspot/ctl.sh exitip
-sh /data/adb/modules/vpn-hotspot/ctl.sh sync       <span class="cm"># check now</span>
-sh /data/adb/modules/vpn-hotspot/ctl.sh sync force <span class="cm"># rebuild</span>
-sh /data/adb/modules/vpn-hotspot/ctl.sh log 100
-sh /data/adb/modules/vpn-hotspot/ctl.sh log clear  <span class="cm"># empty the log</span>
-sh /data/adb/modules/vpn-hotspot/ctl.sh diag       <span class="cm"># full report</span></pre>
+<pre><span class="cm"># from Termux</span>
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh status'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 9.9.9.9'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh clients'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh exitip'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync'   <span class="cm"># check now</span>
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync force'   <span class="cm"># rebuild</span>
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh log 100'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh log clear'   <span class="cm"># empty the log</span>
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   <span class="cm"># full report</span></pre>
 </div>
 
 <div class="sec-title" id="trouble">10 · troubleshooting</div>
