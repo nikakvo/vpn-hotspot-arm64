@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>VPN Hotspot — Help</title>
+  <title>VPN Hotspot - Help</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
   <style>
     :root {
@@ -73,7 +73,7 @@
   <a href="#states">4 · States and the banner</a>
   <a href="#dash">5 · Dashboard</a>
   <a href="#settings">6 · Settings</a>
-  <a href="#set">7 · With DNSCrypt Proxy, ipset and WG Shield</a>
+  <a href="#set">7 · With the other modules of the set</a>
   <a href="#limits">8 · IPv6, speed and other limits</a>
   <a href="#cli">9 · Command line</a>
   <a href="#trouble">10 · Troubleshooting</a>
@@ -87,8 +87,8 @@
   <div class="tw"><table>
     <tr><th>works with</th><th></th></tr>
     <tr><td>VPN apps</td><td>Any app that uses Android's VPN: root WireGuard (kernel backend) and <code>VpnService</code> apps such as v2rayNG, Proton VPN or OpenVPN. Interface names like <code>tun0</code> or <code>wg-…</code> are followed automatically. Tested on the device: WireGuard (kernel backend) and v2rayNG.</td></tr>
-    <tr><td>WG Shield</td><td>The kernel WireGuard module of the same set. Android sees no VPN there, so this module reads WG Shield's status instead and uses its tunnel (<code>wgs0</code>) whenever it is up — also when you switch its server.</td></tr>
-    <tr><td>Tethering</td><td>Wi-Fi hotspot, USB, Bluetooth — several at once.</td></tr>
+    <tr><td>WG Shield</td><td>The kernel WireGuard module of the same set. Android sees no VPN there, so this module reads WG Shield's status instead and uses its tunnel (<code>wgs0</code>) whenever it is up - also when you switch its server.</td></tr>
+    <tr><td>Tethering</td><td>Wi-Fi hotspot, USB, Bluetooth - several at once.</td></tr>
     <tr><td>Root</td><td>SukiSU Ultra, KernelSU, APatch or Magisk (WebUI through MMRL / KSU WebUI Standalone).</td></tr>
   </table></div>
 </div>
@@ -100,7 +100,7 @@
     <li>Connect your VPN, turn the hotspot on, connect a device.</li>
     <li>Open this WebUI: the route at the top shows <strong>Clients → your VPN → Internet</strong> with a moving line.</li>
     <li>On the device, open <code>ipleak.net</code> or a "what is my IP" page: it shows the VPN's address.</li>
-    <li>Turn the VPN off for a moment: the device loses internet (kill switch), and gets it back when the VPN reconnects — no action needed.</li>
+    <li>Turn the VPN off for a moment: the device loses internet (kill switch), and gets it back when the VPN reconnects - no action needed.</li>
   </ol>
 </div>
 
@@ -127,11 +127,11 @@
     <tr><th>state</th><th>meaning</th></tr>
     <tr><td><span class="pill ok">via vpn</span></td><td>Hotspot devices use the VPN. The banner names the interface.</td></tr>
     <tr><td><span class="pill warn">blocked</span></td><td>No VPN, kill switch on: devices have no internet. Connect the VPN.</td></tr>
-    <tr><td><span class="pill warn">direct</span></td><td>No VPN and kill switch off — or you turned WG Shield off or paused it: devices use your connection directly, like without the module.</td></tr>
+    <tr><td><span class="pill warn">direct</span></td><td>No VPN and kill switch off - or you turned WG Shield off or paused it: devices use your connection directly, like without the module.</td></tr>
     <tr><td><span class="pill skip">idle</span></td><td>Hotspot is off. Nothing is installed.</td></tr>
     <tr><td><span class="pill skip">off</span></td><td>Turned off in Settings. Nothing is installed.</td></tr>
   </table></div>
-  <p>"Rules changed by the system — repairing" means Android or another module changed the firewall; the watchdog puts it back within seconds.</p>
+  <p>"Rules changed by the system - repairing" means Android or another module changed the firewall; the watchdog puts it back within seconds.</p>
 </div>
 
 <div class="sec-title" id="dash">5 · dashboard</div>
@@ -139,7 +139,7 @@
   <h3>Route</h3>
   <p>Where hotspot traffic goes right now. Moving yellow line: through the VPN. Red cut: kill switch. Orange: straight to your connection.</p>
   <h3>Exit</h3>
-  <p><strong>Check</strong> asks an IP service (ip-api.com, ipinfo.io as fallback) once, through the VPN — the same way the devices go — and shows the address, place and provider websites see. Nothing is sent until you tap it.</p>
+  <p><strong>Check</strong> asks an IP service (ip-api.com, ipinfo.io as fallback) once, through the VPN - the same way the devices go - and shows the address, place and provider websites see. Nothing is sent until you tap it.</p>
   <h3>Protection</h3>
   <p>Each piece, checked against the live firewall on every watchdog pass: <span class="pill ok">ok</span> in place, <span class="pill bad">repairing</span> missing or moved (fixed on the next pass), <span class="pill skip">not used</span> not needed in this state (for example IPv6 on a device without it).</p>
   <h3>Devices</h3>
@@ -159,13 +159,14 @@
   <p><strong>Check now</strong> compares the rules with what should be there and repairs. <strong>Rebuild</strong> puts everything back from scratch. <strong>Report</strong> collects the state, all rules and the log in one text you can copy.</p>
 </div>
 
-<div class="sec-title" id="set">7 · with dnscrypt proxy, ipset and wg shield</div>
+<div class="sec-title" id="set">7 · with the other modules of the set</div>
 <div class="box">
   <p>Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel GKI_Kernel_SukiSU.</p>
-  <p>The three modules are one set. Their firewall order is fixed and checked on every pass: <span style="color:var(--dnsc)">DNSCrypt</span>'s hotspot filter first, then <span style="color:var(--ipset)">ipset</span>'s IP blocklists, then this module's tunnel rules, then Android's. A device can never reach the tunnel around the two filters.</p>
-  <p><strong>DNS:</strong> with DNSCrypt Proxy installed, a device asks the phone, DNSCrypt answers — encrypted, filtered, and itself sent through the VPN. Without it (or while it is paused) the module sends devices' DNS to the fallback server through the tunnel, so it never goes to your carrier's resolver.</p>
+  <p>The modules are one set. The firewall order is fixed and checked on every pass: <span style="color:var(--dnsc)">DNSCrypt</span>'s hotspot filter first, then <span style="color:var(--ipset)">ipset</span>'s IP blocklists, then this module's tunnel rules, then Android's. A device can never reach the tunnel around the two filters.</p>
+  <p><strong>DNS:</strong> with DNSCrypt Proxy installed, a device asks the phone, DNSCrypt answers - encrypted, filtered, and itself sent through the VPN. Without it (or while it is paused) the module sends devices' DNS to the fallback server through the tunnel, so it never goes to your carrier's resolver.</p>
   <div class="note">You can remove the <code>DNS =</code> line from your WireGuard configs: with DNSCrypt Proxy, DNS never needs the VPN provider's resolver.</div>
-  <p><strong>WG Shield:</strong> its tunnel is used as soon as WG Shield reports it <em>up</em>. While it connects or is down, devices get what the kill switch says (no internet when it is on). When <em>you</em> turn WG Shield off or pause it, devices go direct like the phone — the kill switch is for failures, not for your choice. This applies only when WG Shield was the VPN devices used last; a VPN app that disconnects is always treated as a failure, since the module cannot tell whether you closed it. When a VPN app is connected, WG Shield pauses itself and that app's VPN is used instead. A server switch in WG Shield ends devices' open connections once, so they reopen through the new server.</p>
+  <p><strong>WG Shield:</strong> its tunnel is used as soon as WG Shield reports it <em>up</em>. While it connects or is down, devices get what the kill switch says (no internet when it is on). When <em>you</em> turn WG Shield off or pause it, devices go direct like the phone - the kill switch is for failures, not for your choice. This applies only when WG Shield was the VPN devices used last; a VPN app that disconnects is always treated as a failure, since the module cannot tell whether you closed it. When a VPN app is connected, WG Shield pauses itself and that app's VPN is used instead. A server switch in WG Shield ends devices' open connections once, so they reopen through the new server.</p>
+  <p><strong>LAN Cloak:</strong> the Dashboard only shows its state - it hides the phone itself on the Wi-Fi it is connected to (no device name in DHCP, no mDNS / SSDP / LLMNR announcements), does not cover devices on your hotspot, and neither module changes anything in the other.</p>
 </div>
 
 <div class="sec-title" id="limits">8 · IPv6, speed and other limits</div>
@@ -173,7 +174,7 @@
   <h3>IPv6</h3>
   <p>Devices' IPv6 is not forwarded, so nothing leaks around an IPv4-only tunnel. Devices fall back to IPv4 at once (they get a rejection, not a timeout).</p>
   <h3>Speed</h3>
-  <p>The module adds no measurable cost; the tunnel and the hotspot radio set the limit. A 2.4 GHz hotspot tops out near 100 Mbit/s — set the hotspot to <strong>5 GHz</strong> in Android's hotspot settings if your devices support it.</p>
+  <p>The module adds no measurable cost; the tunnel and the hotspot radio set the limit. A 2.4 GHz hotspot tops out near 100 Mbit/s - set the hotspot to <strong>5 GHz</strong> in Android's hotspot settings if your devices support it.</p>
   <h3>Offload</h3>
   <p>Android can speed up tethering by bypassing the firewall (tether offload). It only does so for traffic to your normal connection, never for traffic sent into the VPN, so no setting needs changing.</p>
 </div>
@@ -197,13 +198,13 @@ su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   <span class="
 <div class="sec-title" id="trouble">10 · troubleshooting</div>
 <div class="box">
   <h3>Devices have no internet</h3>
-  <p>Is the state <span class="pill warn">blocked</span>? Then the VPN is not connected — the kill switch is doing its job. Connect the VPN, or turn the kill switch off.</p>
+  <p>Is the state <span class="pill warn">blocked</span>? Then the VPN is not connected - the kill switch is doing its job. Connect the VPN, or turn the kill switch off.</p>
   <h3>A device shows my real address</h3>
   <p>Check the state is <span class="pill ok">via vpn</span> and every Protection row is <span class="pill ok">ok</span>. Open <strong>Report</strong> and look at "route for client": it must say <code>dev</code> followed by your VPN interface.</p>
   <h3>A guest's phone has no internet (Private DNS)</h3>
-  <p>A phone with <strong>Private DNS set to a hostname</strong> (Android: Settings → Private DNS, e.g. <code>dns.adguard-dns.com</code>) accepts no other DNS. With DNSCrypt Proxy's <em>Block DoT for hotspot clients</em> on, that phone gets no DNS at all. Either the guest sets Private DNS to <strong>Automatic</strong> (the phone then uses your DNSCrypt, filtered), or you turn that switch off in DNSCrypt Proxy (their encrypted DNS then works — still through your VPN, but without your filters). Encrypted DNS cannot be redirected to yours.</p>
+  <p>A phone with <strong>Private DNS set to a hostname</strong> (Android: Settings → Private DNS, e.g. <code>dns.adguard-dns.com</code>) accepts no other DNS. With DNSCrypt Proxy's <em>Block DoT for hotspot clients</em> on, that phone gets no DNS at all. Either the guest sets Private DNS to <strong>Automatic</strong> (the phone then uses your DNSCrypt, filtered), or you turn that switch off in DNSCrypt Proxy (their encrypted DNS then works - still through your VPN, but without your filters). Encrypted DNS cannot be redirected to yours.</p>
   <h3>After a server switch a device still shows the old address</h3>
-  <p>The module ends every client connection when the VPN changes server, so they reopen through the new one. A page may still show a cached result — reload it.</p>
+  <p>The module ends every client connection when the VPN changes server, so they reopen through the new one. A page may still show a cached result - reload it.</p>
   <h3>Connections opened while devices went out directly</h3>
   <p>While devices use your connection directly (module off, or kill switch off without VPN), Android accelerates their connections past the firewall. The moment the tunnel takes over again, the module ends those connections (a small helper, <code>bin/vhs-ctflush</code>); devices reopen them at once, through the VPN. The log shows how many were ended.</p>
   <h3>The VPN app fails to connect or disconnect</h3>

@@ -590,6 +590,34 @@ sibling_state() { # <module-id> [other id] -> absent | disabled | enabled
   unset _sd
 }
 
+# LAN Cloak Arm64 (same set): shown in the WebUI only, nothing here depends
+# on it - it works on the phone's Wi-Fi client interface, this module on
+# the tethered ones. Its status file is rewritten every 10 s by its watchdog.
+LANC_STATUS="${VHS_LANC_STATUS:-/data/adb/lan-cloak/state/status}"
+lanc_keys() {
+  _lc=$(sibling_state lan-cloak)
+  _ls=""; _lr=""; _ld=""; _la=""; _lw=""; _lu=""
+  if [ "$_lc" != absent ] && [ -f "$LANC_STATUS" ]; then
+    while IFS='=' read -r _lk _lv; do
+      case "$_lk" in
+        state) _ls=$_lv ;; reason) _lr=$_lv ;; dhcp) _ld=$_lv ;;
+        announce) _la=$_lv ;; wifi) _lw=$_lv ;; updated) _lu=$_lv ;;
+      esac
+    done 2>/dev/null < "$LANC_STATUS"
+  fi
+  echo "lancloak=$_lc"
+  echo "lancloak_state=$_ls"
+  echo "lancloak_reason=$_lr"
+  echo "lancloak_dhcp=$_ld"
+  echo "lancloak_announce=$_la"
+  echo "lancloak_wifi=$_lw"
+  case "$_lu" in
+    ''|*[!0-9]*) echo "lancloak_age=" ;;
+    *) echo "lancloak_age=$(( $(date +%s) - _lu ))" ;;
+  esac
+  unset _lc _ls _lr _ld _la _lw _lu _lk _lv
+}
+
 # ── Watchdog helpers ─────────────────────────────────────────────────────────
 wd_pid() {
   _wp=""

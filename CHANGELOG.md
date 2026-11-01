@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0-r16
+
+LAN Cloak joins the networking set.
+
+* **LAN Cloak row** in Dashboard → Networking set: shows whether [LAN Cloak Arm64](https://github.com/nikakvo/lan-cloak-arm64) is installed and what it does right now (cloaked, off, error, disabled). It only reads LAN Cloak's status - nothing changes in how hotspot devices are routed. LAN Cloak works on the phone's own Wi-Fi connection, so hotspot devices are not covered by it, as the row says
+* Help → *With the other modules of the set* and the README describe the five modules
+* **WebUI opens quickly every time** - after closing and quickly reopening it, the page could wait several seconds before showing anything. The root manager sometimes drops the page's very first command; the page now asks again after a moment instead of waiting for the lost answer
+* Texts use plain hyphens throughout
+
+---
+
 ## 1.0-r15
 
 One folder for everything, and works with WG Shield 1.0-r4.
@@ -26,11 +37,11 @@ Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel
 
 ## 1.0-r13
 
-Works with WG Shield Arm64 — the kernel WireGuard module of the same set.
+Works with WG Shield Arm64 - the kernel WireGuard module of the same set.
 
-* **WG Shield's tunnel is used for hotspot devices.** WG Shield runs WireGuard without an app and without Android's VPN, so the VPN rules this module reads do not name it. It now reads WG Shield's status file instead and routes devices through its tunnel (`wgs0`) whenever it reports *up* — also after a server switch there, which ends devices' open connections once so they reopen through the new server
-* **Your choice, not a failure.** When you turn WG Shield off or pause it, devices go direct like the phone. The kill switch still holds when its tunnel fails (connecting, no handshake) or when a VPN app drops — a VPN app cannot tell a crash from being closed, so it is always treated as a failure. The rule applies only when WG Shield was the VPN devices used last (remembered across reboots)
-* **Dashboard:** the route shows the WG Shield tunnel's name, the banner says *Hotspot devices use WG Shield · tunnel* or *WG Shield is off — devices use your connection directly*; the networking set has a WG Shield row. Manager status: *Hotspot via WG Shield · tunnel* / *Direct (WG Shield off)*
+* **WG Shield's tunnel is used for hotspot devices.** WG Shield runs WireGuard without an app and without Android's VPN, so the VPN rules this module reads do not name it. It now reads WG Shield's status file instead and routes devices through its tunnel (`wgs0`) whenever it reports *up* - also after a server switch there, which ends devices' open connections once so they reopen through the new server
+* **Your choice, not a failure.** When you turn WG Shield off or pause it, devices go direct like the phone. The kill switch still holds when its tunnel fails (connecting, no handshake) or when a VPN app drops - a VPN app cannot tell a crash from being closed, so it is always treated as a failure. The rule applies only when WG Shield was the VPN devices used last (remembered across reboots)
+* **Dashboard:** the route shows the WG Shield tunnel's name, the banner says *Hotspot devices use WG Shield · tunnel* or *WG Shield is off - devices use your connection directly*; the networking set has a WG Shield row. Manager status: *Hotspot via WG Shield · tunnel* / *Direct (WG Shield off)*
 * A VPN app connected while WG Shield is on still wins: WG Shield pauses itself and that app's VPN is used, as before
 * **Look:** the title has no colour fringes any more, and the moving line of the route no longer stops for a moment while the page refreshes
 * Status keys `vpn_source`, `wgs_tunnel`, `wgs_direct`; poll keys `wgshield`, `wgshield_state`
@@ -39,27 +50,27 @@ Works with WG Shield Arm64 — the kernel WireGuard module of the same set.
 
 First release. Devices on your hotspot (Wi-Fi, USB, Bluetooth) go through the phone's VPN.
 
-* **Routing through any VPN** — detected from Android's own VPN rules, both the root WireGuard kind (all users) and `VpnService` apps such as v2rayNG, Proton VPN or OpenVPN that leave their own uid out (split rules); reconnects (new routing table) and server switches (new interface) are followed in about 2 seconds
-* **Kill switch** (on by default) — no VPN → devices get no internet, rejected at once instead of hanging
-* **Dead tunnel detection** — sending into the VPN for 20 s with nothing coming back triggers one ping through the tunnel; no answer and the VPN counts as down until it answers again
-* **No leak window** — a guard rule blocks devices while rules are rebuilt, and a new hotspot is blocked from its first packet until it is routed
-* **Old connections ended** — when the tunnel takes over after devices went out directly, or the VPN switches server, devices' open connections are closed so they reopen through the current tunnel (Android's tether offload, and VPN servers that all give the same inside address, would otherwise keep them on the old path); a small static helper, `bin/vhs-ctflush`, source in `src/`
+* **Routing through any VPN** - detected from Android's own VPN rules, both the root WireGuard kind (all users) and `VpnService` apps such as v2rayNG, Proton VPN or OpenVPN that leave their own uid out (split rules); reconnects (new routing table) and server switches (new interface) are followed in about 2 seconds
+* **Kill switch** (on by default) - no VPN → devices get no internet, rejected at once instead of hanging
+* **Dead tunnel detection** - sending into the VPN for 20 s with nothing coming back triggers one ping through the tunnel; no answer and the VPN counts as down until it answers again
+* **No leak window** - a guard rule blocks devices while rules are rebuilt, and a new hotspot is blocked from its first packet until it is routed
+* **Old connections ended** - when the tunnel takes over after devices went out directly, or the VPN switches server, devices' open connections are closed so they reopen through the current tunnel (Android's tether offload, and VPN servers that all give the same inside address, would otherwise keep them on the old path); a small static helper, `bin/vhs-ctflush`, source in `src/`
 * **IPv6 not forwarded**, **TCP MSS** follows the tunnel's MTU
-* **Client DNS** — handled by DNSCrypt Proxy when present (its queries go through the VPN); otherwise sent to a fallback server (Quad9 by default) through the tunnel
-* **Works with DNSCrypt Proxy and ipset** — the firewall order DNSCrypt → ipset → tunnel → Android is kept and checked on every pass
-* **Plays well with Android and VPN apps** — tables are read with `iptables-save` (no firewall lock), all changes go in one `iptables-restore` per family, and the watchdog waits for network-event bursts to settle; WireGuard's `wg-quick`, which does not wait for the lock, no longer fails with "wg-quick returned 4 / 124"
-* **WebUI** — route strip, exit address on demand, live protection checks, devices, settings (applied in the background, the page never freezes), log, help
-* **CLI** — `ctl.sh status | set | clients | exitip | sync | log | diag`
+* **Client DNS** - handled by DNSCrypt Proxy when present (its queries go through the VPN); otherwise sent to a fallback server (Quad9 by default) through the tunnel
+* **Works with DNSCrypt Proxy and ipset** - the firewall order DNSCrypt → ipset → tunnel → Android is kept and checked on every pass
+* **Plays well with Android and VPN apps** - tables are read with `iptables-save` (no firewall lock), all changes go in one `iptables-restore` per family, and the watchdog waits for network-event bursts to settle; WireGuard's `wg-quick`, which does not wait for the lock, no longer fails with "wg-quick returned 4 / 124"
+* **WebUI** - route strip, exit address on demand, live protection checks, devices, settings (applied in the background, the page never freezes), log, help
+* **CLI** - `ctl.sh status | set | clients | exitip | sync | log | diag`
 
 ### Development builds (tested on device, not published)
 
 * r1 – r2: first routing core; replaced dozens of separate iptables calls per event with one `iptables-restore` and a settle delay after the phone showed netd timing out while WireGuard switched
 * r3 – r4: WebUI; cyberpunk yellow theme; waits for netd when a VPN is half removed
-* r5: table checks without the firewall lock (`iptables-save`) — WireGuard failed when any process held it
+* r5: table checks without the firewall lock (`iptables-save`) - WireGuard failed when any process held it
 * r6: settings applied by the watchdog in the background (no WebUI freeze)
 * r7: a VPN that is already up is taken at once, even with stale netd rules
 * r8: dead tunnel detection; old direct connections ended when the tunnel takes over
 * r9: VPN shown while the hotspot is off; exit check names the live tunnel; WebUI root bridge detection made robust
 * r10: release candidate
-* r11: `VpnService` VPNs (v2rayNG, …) were not recognised — their VPN rule leaves the app's own uid out; detection now covers any split rule, checked against netd's VPN return rule
+* r11: `VpnService` VPNs (v2rayNG, …) were not recognised - their VPN rule leaves the app's own uid out; detection now covers any split rule, checked against netd's VPN return rule
 * r12: VPNs without a `default` route (v2rayNG "bypass LAN", OpenVPN `0.0.0.0/1 + 128.0.0.0/1`) accepted; all client connections ended on a server switch; Help: guests with Private DNS

@@ -19,6 +19,7 @@
       --dnsc:   #00ff88;
       --ipset:  #00aaff;
       --wgs:    #7dd3fc;
+      --lanc:   #ff3dd2;
       --border: #2c2908;
       --line:   #18160a;
       --muted:  #8a8452;
@@ -129,9 +130,10 @@
     .pill.dnsc { color: var(--dnsc);  border-color: rgba(0,255,136,.35); background: rgba(0,255,136,.06); }
     .pill.ipset { color: var(--ipset); border-color: rgba(0,170,255,.4); background: rgba(0,170,255,.06); }
     .pill.wgs { color: var(--wgs); border-color: rgba(125,211,252,.4); background: rgba(125,211,252,.06); }
+    .pill.lanc { color: var(--lanc); border-color: rgba(255,61,210,.4); background: rgba(255,61,210,.06); }
     .sib { border-left: 2px solid; padding-left: 9px; }
-    .sib.dnsc { border-left-color: var(--dnsc); } .sib.ipset { border-left-color: var(--ipset); } .sib.wgs { border-left-color: var(--wgs); }
-    .sib.dnsc b { color: var(--dnsc) !important; } .sib.ipset b { color: var(--ipset) !important; } .sib.wgs b { color: var(--wgs) !important; }
+    .sib.dnsc { border-left-color: var(--dnsc); } .sib.ipset { border-left-color: var(--ipset); } .sib.wgs { border-left-color: var(--wgs); } .sib.lanc { border-left-color: var(--lanc); }
+    .sib.dnsc b { color: var(--dnsc) !important; } .sib.ipset b { color: var(--ipset) !important; } .sib.wgs b { color: var(--wgs) !important; } .sib.lanc b { color: var(--lanc) !important; }
 
     /* exit */
     .exit-box { display: flex; align-items: center; gap: 10px; }
@@ -220,18 +222,18 @@
 <div id="banner" class="b-idle"><span class="live-dot"></span>Connecting…</div>
 
 <div class="route" id="route" aria-label="Where hotspot traffic goes">
-  <div class="node clip off" id="rn-cli"><div class="n1">Clients</div><div class="n2" id="rn-cli2">—</div></div>
+  <div class="node clip off" id="rn-cli"><div class="n1">Clients</div><div class="n2" id="rn-cli2">-</div></div>
   <div class="link" id="rl-1"></div>
-  <div class="node clip off" id="rn-vpn"><div class="n1" id="rn-vpn1">VPN</div><div class="n2" id="rn-vpn2">—</div></div>
+  <div class="node clip off" id="rn-vpn"><div class="n1" id="rn-vpn1">VPN</div><div class="n2" id="rn-vpn2">-</div></div>
   <div class="link" id="rl-2"></div>
-  <div class="node clip off" id="rn-net"><div class="n1">Internet</div><div class="n2" id="rn-net2">—</div></div>
+  <div class="node clip off" id="rn-net"><div class="n1">Internet</div><div class="n2" id="rn-net2">-</div></div>
 </div>
 
 <div class="stats">
-  <div class="sc"><div class="lbl">State</div><div class="val" id="s-state">—</div></div>
-  <div class="sc"><div class="lbl">Devices</div><div class="val" id="s-dev">—</div></div>
-  <div class="sc"><div class="lbl">Kill switch</div><div class="val" id="s-ks">—</div></div>
-  <div class="sc"><div class="lbl">Client DNS</div><div class="val" id="s-dns">—</div></div>
+  <div class="sc"><div class="lbl">State</div><div class="val" id="s-state">-</div></div>
+  <div class="sc"><div class="lbl">Devices</div><div class="val" id="s-dev">-</div></div>
+  <div class="sc"><div class="lbl">Kill switch</div><div class="val" id="s-ks">-</div></div>
+  <div class="sc"><div class="lbl">Client DNS</div><div class="val" id="s-dns">-</div></div>
 </div>
 
 <nav class="tabs">
@@ -247,19 +249,19 @@
     <div class="section">
       <div class="section-title"><span class="s-accent"></span>Exit<span class="s-note" id="exit-note">what websites see</span></div>
       <div class="exit-box">
-        <div id="exit-out"><div id="exit-ip" class="glitch v m">—</div><div id="exit-sub">Tap Check to ask an IP service (one small request through the VPN).</div></div>
+        <div id="exit-out"><div id="exit-ip" class="glitch v m">-</div><div id="exit-sub">Tap Check to ask an IP service (one small request through the VPN).</div></div>
         <button class="btn-s clip" id="exit-btn" onclick="checkExit()">Check</button>
       </div>
     </div>
 
     <div class="section">
       <div class="section-title"><span class="s-accent"></span>Tunnel</div>
-      <div class="d-stat"><span class="k">Interface</span><span class="v" id="t-if">—</span></div>
-      <div class="d-stat"><span class="k">Answers</span><span class="v" id="t-health">—</span></div>
-      <div class="d-stat"><span class="k">Routing table</span><span class="v" id="t-table">—</span></div>
-      <div class="d-stat"><span class="k">MTU / TCP MSS</span><span class="v" id="t-mtu">—</span></div>
-      <div class="d-stat"><span class="k">Hotspot</span><span class="v" id="t-teth">—</span></div>
-      <div class="d-stat"><span class="k">In this state for</span><span class="v" id="t-since">—</span></div>
+      <div class="d-stat"><span class="k">Interface</span><span class="v" id="t-if">-</span></div>
+      <div class="d-stat"><span class="k">Answers</span><span class="v" id="t-health">-</span></div>
+      <div class="d-stat"><span class="k">Routing table</span><span class="v" id="t-table">-</span></div>
+      <div class="d-stat"><span class="k">MTU / TCP MSS</span><span class="v" id="t-mtu">-</span></div>
+      <div class="d-stat"><span class="k">Hotspot</span><span class="v" id="t-teth">-</span></div>
+      <div class="d-stat"><span class="k">In this state for</span><span class="v" id="t-since">-</span></div>
     </div>
 
     <div class="section">
@@ -270,14 +272,14 @@
     <div class="section">
       <div class="section-title"><span class="s-accent"></span>Networking set</div>
       <div id="set-body"></div>
-      <div class="note">Order in the firewall is fixed: DNSCrypt and ipset filter a device first, then it is sent into the tunnel. Nothing here can bypass them.</div>
+      <div class="note">Order in the firewall is fixed: DNSCrypt and ipset filter a device first, then it is sent into the tunnel. Nothing here can bypass them. LAN Cloak works apart from this order.</div>
     </div>
 
     <div class="section">
       <div class="section-title"><span class="s-accent"></span>Watchdog</div>
-      <div class="d-stat"><span class="k">Running</span><span class="v" id="w-run">—</span></div>
-      <div class="d-stat"><span class="k">Network events</span><span class="v" id="w-ev">—</span></div>
-      <div class="d-stat"><span class="k">Last check</span><span class="v" id="w-tick">—</span></div>
+      <div class="d-stat"><span class="k">Running</span><span class="v" id="w-run">-</span></div>
+      <div class="d-stat"><span class="k">Network events</span><span class="v" id="w-ev">-</span></div>
+      <div class="d-stat"><span class="k">Last check</span><span class="v" id="w-tick">-</span></div>
     </div>
   </div>
 
@@ -366,7 +368,7 @@
 </main>
 
 <footer>
-  <span id="foot-l">—</span>
+  <span id="foot-l">-</span>
   <span id="foot-info"></span>
   <span id="foot-r"></span>
 </footer>
@@ -399,12 +401,26 @@ function legacyExec(cmd) { const r = ksu.exec(cmd); return { errno: 0, stdout: t
 // whole page until the command ends. A slow first root shell (cold start)
 // must not push the page into legacy mode for good, so the callback form
 // gets two generous tries before falling back.
+// Which form of ksu.exec works. On a quick reopen the root manager can run
+// the page's first command before it has registered the new page, and that
+// answer never comes. So the check is asked again a moment later, several
+// times, and the first answer wins - instead of waiting seconds for a lost
+// one and then falling back to the slow form that blocks the page.
 async function detectExecMode() {
   if (!hasBridge()) throw new Error('no root bridge');
-  for (const t of [8000, 15000]) {
-    try { const r = await callbackExec('echo vhs_ok', t); if ((r.stdout || '').indexOf('vhs_ok') >= 0) return 'callback'; }
-    catch (e) { if (!/timeout/.test(String(e && e.message))) break; }
-  }
+  const viaCallback = await new Promise(resolve => {
+    let done = false;
+    const finish = v => { if (!done) { done = true; resolve(v); } };
+    const ask = () => {
+      if (done) return;
+      callbackExec('echo vhs_ok', 15000).then(
+        r => { if ((r.stdout || '').indexOf('vhs_ok') >= 0) finish(true); },
+        e => { if (!/timeout/.test(String(e && e.message))) finish(false); });
+    };
+    [0, 400, 1000, 2000, 3500, 6000].forEach(t => setTimeout(ask, t));
+    setTimeout(() => finish(false), 16000);
+  });
+  if (viaCallback) return 'callback';
   try { const l = legacyExec('echo vhs_ok'); if ((l.stdout || '').indexOf('vhs_ok') >= 0) return 'legacy'; } catch (e) {}
   throw new Error('root shell unavailable');
 }
@@ -428,7 +444,7 @@ document.addEventListener('click', e => {
   if (!t || t.matches(LOCK_FREE)) return;
   if (_busyN > 0 || e.timeStamp < _fgEndedAt) {
     _pressed = null; e.preventDefault(); e.stopImmediatePropagation();
-    if (_busyN > 0) toast('Wait — the previous action is still running', 'err');
+    if (_busyN > 0) toast('Wait - the previous action is still running', 'err');
   }
 }, true);
 async function ctl(args, timeoutMs) {
@@ -464,7 +480,7 @@ function parseKV(text) {
   return out;
 }
 function fmtDur(sec) {
-  sec = num(sec); if (sec < 1) return '—';
+  sec = num(sec); if (sec < 1) return '-';
   const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
   if (d) return `${d}d ${h}h ${m}m`; if (h) return `${h}h ${m}m`; if (m) return `${m}m ${s}s`; return `${s}s`;
 }
@@ -495,7 +511,7 @@ function renderRoute(st) {
   $('rn-cli2').textContent = tl.length ? tl.map(t => t.ifc).join(' ') + ' · ' + n + (n === 1 ? ' device' : ' devices') : 'hotspot off';
   $('rn-vpn1').textContent = st.wgs_tunnel || st.vpn || 'VPN';
   $('rn-vpn2').textContent = st.wgs_tunnel ? 'WG Shield · ' + st.vpn : st.vpn ? 'table ' + st.vpn_table : 'not connected';
-  $('rn-net2').textContent = EXIT.ip ? EXIT.ip : (st.state === 'vpn' ? 'via tunnel' : '—');
+  $('rn-net2').textContent = EXIT.ip ? EXIT.ip : (st.state === 'vpn' ? 'via tunnel' : '-');
   switch (st.state) {
     case 'vpn': set(nodes.cli, 'on'); set(nodes.vpn, 'on'); set(nodes.net, 'on'); setL(l1, 'flow'); setL(l2, 'flow'); break;
     case 'blocked': set(nodes.cli, 'on'); set(nodes.vpn, 'warn'); set(nodes.net, 'off'); setL(l1, 'cut'); setL(l2, ''); if (st.tunnel === 'dead') $('rn-vpn2').textContent = 'not responding'; break;
@@ -505,20 +521,20 @@ function renderRoute(st) {
 }
 
 function renderBanner(st) {
-  if (st.watchdog !== 'running') { setBanner('b-error', 'Watchdog not running — nothing is being maintained. Reboot the phone.'); return; }
+  if (st.watchdog !== 'running') { setBanner('b-error', 'Watchdog not running - nothing is being maintained. Reboot the phone.'); return; }
   const tl = tethers(st).map(t => t.ifc).join(', ');
   switch (st.state) {
     case 'vpn':
-      if (st.rules === 'repairing') setBanner('b-warn', 'Rules changed by the system — repairing');
+      if (st.rules === 'repairing') setBanner('b-warn', 'Rules changed by the system - repairing');
       else setBanner('', `Hotspot devices use ${st.wgs_tunnel ? 'WG Shield · ' + esc(st.wgs_tunnel) : esc(st.vpn)}` + (st.dns === 'fallback' ? ` · DNS ${esc(st.fallback_dns)} via tunnel` : ''));
       break;
-    case 'blocked': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : wgsWaiting(st) ? 'WG Shield is ' + esc(st.wgshield_state) : 'No VPN') + ' — kill switch holds: devices have no internet'); break;
+    case 'blocked': setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : wgsWaiting(st) ? 'WG Shield is ' + esc(st.wgshield_state) : 'No VPN') + ' - kill switch holds: devices have no internet'); break;
     case 'passthrough':
-      if (st.wgs_direct) setBanner('b-idle', `WG Shield is ${esc(st.wgs_direct)} — devices use your connection directly, like the phone`);
-      else setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' — kill switch is off: devices use your connection directly');
+      if (st.wgs_direct) setBanner('b-idle', `WG Shield is ${esc(st.wgs_direct)} - devices use your connection directly, like the phone`);
+      else setBanner('b-warn', (st.tunnel === 'dead' ? `${esc(st.vpn)} is not responding` : 'No VPN') + ' - kill switch is off: devices use your connection directly');
       break;
     case 'idle': setBanner('b-idle', 'Hotspot is off' + (st.vpn ? ` · VPN ${esc(st.vpn)} ready` : '')); break;
-    case 'disabled': setBanner('b-idle', 'Turned off in Settings — tethering is Android\'s normal one'); break;
+    case 'disabled': setBanner('b-idle', 'Turned off in Settings - tethering is Android\'s normal one'); break;
     default: setBanner('b-idle', 'Waiting for the watchdog…');
   }
 }
@@ -529,12 +545,12 @@ const CHECKS = [
   ['chk_nat', 'Address translation', 'Devices share the tunnel\'s address'],
   ['chk_forward', 'Firewall', 'Below DNSCrypt and ipset, above Android\'s tethering rules'],
   ['chk_mss', 'Packet size', 'TCP segments sized for the tunnel MTU'],
-  ['chk_ipv6', 'IPv6', 'Not forwarded — cannot leak around an IPv4 tunnel'],
+  ['chk_ipv6', 'IPv6', 'Not forwarded - cannot leak around an IPv4 tunnel'],
   ['chk_dns', 'Device DNS', ''],
 ];
 function renderProtection(st) {
   if (st.state !== 'vpn' && st.state !== 'blocked') {
-    $('prot-body').innerHTML = '<div class="empty">' + (st.state === 'passthrough' ? (st.wgs_direct ? 'Nothing active: you turned WG Shield ' + esc(st.wgs_direct === 'paused' ? 'on pause' : 'off') + ', devices go direct like the phone.' : 'Nothing active: kill switch is off and there is no VPN.') : 'Nothing to protect right now — rules are installed when the hotspot is on.') + '</div>';
+    $('prot-body').innerHTML = '<div class="empty">' + (st.state === 'passthrough' ? (st.wgs_direct ? 'Nothing active: you turned WG Shield ' + esc(st.wgs_direct === 'paused' ? 'on pause' : 'off') + ', devices go direct like the phone.' : 'Nothing active: kill switch is off and there is no VPN.') : 'Nothing to protect right now - rules are installed when the hotspot is on.') + '</div>';
     $('prot-note').textContent = ''; $('dash-dot').className = 'tab-dot'; return;
   }
   let bad = 0;
@@ -565,34 +581,54 @@ function renderSet(st) {
   $('set-body').innerHTML =
     sib('dnsc', 'DNSCrypt Proxy', dn, st.dnscrypt_hotspot === '1' || st.local_dns === '1', 'Encrypts and filters devices\' DNS; its queries go through this tunnel.', `Devices' DNS goes to ${esc(st.set_FALLBACK_DNS || '9.9.9.9')} through the tunnel instead.`) +
     sib('ipset', 'ipset', ip, st.ipset_forward === '1', 'Blocks listed IP ranges for devices before they reach the tunnel.', 'No IP blocklists for devices.') +
-    sib('wgs', 'WG Shield', st.wgshield, st.vpn_source === 'wg-shield', 'Its tunnel (' + esc(st.wgs_tunnel) + ') carries the devices; switching its server needs nothing here.', 'Kernel WireGuard without an app — used automatically when its tunnel is up.')
+    sib('wgs', 'WG Shield', st.wgshield, st.vpn_source === 'wg-shield', 'Its tunnel (' + esc(st.wgs_tunnel) + ') carries the devices; switching its server needs nothing here.', 'Kernel WireGuard without an app - used automatically when its tunnel is up.')
       .replace('<span class="pill warn">not filtering</span>', st.wgshield === 'enabled' && st.vpn_source !== 'wg-shield' ? `<span class="pill skip">${esc(st.wgshield_state || 'off')}</span>` : '<span class="pill warn">not filtering</span>')
-      .replace('Installed, but its hotspot rules are not in place right now.', st.wgs_direct ? 'Turned ' + (st.wgs_direct === 'paused' ? 'on pause' : 'off') + ' by you — devices go direct, like the phone.' : st.wgshield_state === 'paused' ? 'Paused — another VPN is connected, which is used instead.' : 'Its tunnel is not up; devices follow the kill switch.');
+      .replace('Installed, but its hotspot rules are not in place right now.', st.wgs_direct ? 'Turned ' + (st.wgs_direct === 'paused' ? 'on pause' : 'off') + ' by you - devices go direct, like the phone.' : st.wgshield_state === 'paused' ? 'Paused - another VPN is connected, which is used instead.' : 'Its tunnel is not up; devices follow the kill switch.') +
+    lancRow(st);
+}
+
+// LAN Cloak: read only, its own status file (lancloak* keys from ctl poll)
+function lancRow(st) {
+  const base = 'Hides the phone on Wi-Fi: no device name in DHCP, no mDNS / SSDP / LLMNR announcements.';
+  const note = ' Hotspot devices are not covered (LAN Cloak works on the Wi-Fi client interface only).';
+  const age = parseInt(st.lancloak_age, 10);
+  let pill, txt = base + note;
+  if (st.lancloak === 'absent' || !st.lancloak) pill = '<span class="pill skip">not installed</span>';
+  else if (st.lancloak === 'disabled') pill = '<span class="pill warn">disabled</span>';
+  else if (!st.lancloak_state || !(age < 60)) { pill = '<span class="pill warn">no status</span>'; txt = 'Installed, but its watchdog has not reported for a while.' + note; }
+  else if (st.lancloak_state === 'on') {
+    pill = '<span class="pill lanc">cloaked</span>';
+    const d = st.lancloak_dhcp === 'on' ? 'DHCP cleaned' : st.lancloak_dhcp === 'waiting' ? 'DHCP guard waiting for Wi-Fi' : 'DHCP untouched';
+    const a = st.lancloak_announce === 'on' ? 'announcements blocked' : 'announcements allowed';
+    txt = `Hides the phone on Wi-Fi: ${d}, ${a}.` + note;
+  } else if (st.lancloak_state === 'error') { pill = '<span class="pill warn">error</span>'; txt = (st.lancloak_reason === 'dhcp' ? 'Its DHCP guard failed - open LAN Cloak for details.' : 'Its firewall rules could not be set - open LAN Cloak for details.') + note; }
+  else { pill = '<span class="pill skip">off</span>'; txt = (st.lancloak_reason === 'nothing-selected' ? 'Installed, nothing selected in its settings.' : 'Installed, turned off in its settings.') + note; }
+  return `<div class="row sib lanc"><div class="rn"><b>LAN Cloak</b><span>${txt}</span></div>${pill}</div>`;
 }
 
 function renderStats(st) {
   const lbl = { vpn: 'Via VPN', blocked: 'Blocked', passthrough: 'Direct', idle: 'Idle', disabled: 'Off' };
   const cls = { vpn: '', blocked: 'a', passthrough: 'a', idle: 'm', disabled: 'm' };
-  $('s-state').textContent = lbl[st.state] || '—'; $('s-state').className = 'val ' + (st.state in cls ? cls[st.state] : 'm');
-  $('s-dev').textContent = tethers(st).length ? String(st.client.length) : '—';
+  $('s-state').textContent = lbl[st.state] || '-'; $('s-state').className = 'val ' + (st.state in cls ? cls[st.state] : 'm');
+  $('s-dev').textContent = tethers(st).length ? String(st.client.length) : '-';
   $('s-ks').textContent = st.set_KILL_SWITCH === '1' ? 'On' : 'Off'; $('s-ks').className = 'val ' + (st.set_KILL_SWITCH === '1' ? '' : 'a');
-  $('s-dns').textContent = st.dns === 'local' ? 'DNSCrypt' : st.dns === 'fallback' ? (st.fallback_dns || '—') : '—';
+  $('s-dns').textContent = st.dns === 'local' ? 'DNSCrypt' : st.dns === 'fallback' ? (st.fallback_dns || '-') : '-';
   $('s-dns').className = 'val ' + (st.dns === 'none' || !st.dns ? 'm' : '');
 }
 
 function renderTunnel(st) {
   const tl = tethers(st), mtu = num(st.vpn_mtu);
   $('t-if').textContent = st.vpn || 'none'; $('t-if').className = 'v ' + (st.vpn ? '' : 'm');
-  const th = st.set_TUNNEL_CHECK !== '1' ? ['not checked', 'm'] : !st.vpn ? ['—', 'm'] : st.tunnel === 'dead' ? ['NO — not responding', 'r'] : ['yes', ''];
+  const th = st.set_TUNNEL_CHECK !== '1' ? ['not checked', 'm'] : !st.vpn ? ['-', 'm'] : st.tunnel === 'dead' ? ['NO - not responding', 'r'] : ['yes', ''];
   $('t-health').textContent = th[0]; $('t-health').className = 'v ' + th[1];
-  $('t-table').textContent = st.vpn_table || '—';
-  $('t-mtu').textContent = mtu ? `${mtu} / ${mtu - 40}` : '—';
+  $('t-table').textContent = st.vpn_table || '-';
+  $('t-mtu').textContent = mtu ? `${mtu} / ${mtu - 40}` : '-';
   $('t-teth').textContent = tl.length ? tl.map(t => t.ifc + (t.net !== '-' ? ' ' + t.net : ' (starting)')).join(', ') : 'off';
   $('t-teth').className = 'v ' + (tl.length ? '' : 'm');
-  $('t-since').textContent = st.since ? fmtDur(num(st.now) - num(st.since)) : '—';
+  $('t-since').textContent = st.since ? fmtDur(num(st.now) - num(st.since)) : '-';
   $('w-run').textContent = st.watchdog === 'running' ? 'yes' : 'NO'; $('w-run').className = 'v ' + (st.watchdog === 'running' ? '' : 'r');
-  $('w-ev').textContent = st.events === 'on' ? 'watching (reacts in ~2 s)' : 'off — every 10 s'; $('w-ev').className = 'v ' + (st.events === 'on' ? '' : 'a');
-  $('w-tick').textContent = st.tick_age !== '' ? st.tick_age + ' s ago' : '—';
+  $('w-ev').textContent = st.events === 'on' ? 'watching (reacts in ~2 s)' : 'off - every 10 s'; $('w-ev').className = 'v ' + (st.events === 'on' ? '' : 'a');
+  $('w-tick').textContent = st.tick_age !== '' ? st.tick_age + ' s ago' : '-';
   $('foot-l').textContent = (st.version ? 'v' + st.version : '') + (EXEC_MODE === 'legacy' ? ' · sync' : '');
   $('hdr-ver').textContent = st.version ? 'v' + st.version : '';
   $('foot-info').textContent = st.state === 'vpn' ? 'kill switch ' + (st.set_KILL_SWITCH === '1' ? 'on' : 'off') : '';
@@ -633,9 +669,9 @@ function render(st) {
   // An exit result belongs to the tunnel it was measured on
   if (EXIT.ip && (st.vpn || '') !== (EXIT.via || '')) {
     EXIT.ip = ''; EXIT.via = ''; EXIT.cleared = true;
-    $('exit-ip').textContent = '—'; $('exit-ip').className = 'glitch v m';
+    $('exit-ip').textContent = '-'; $('exit-ip').className = 'glitch v m';
   }
-  if (!EXIT.ip && EXIT.cleared) $('exit-sub').textContent = st.vpn ? 'The tunnel changed — tap Check to see the new exit.' : 'No VPN right now.';
+  if (!EXIT.ip && EXIT.cleared) $('exit-sub').textContent = st.vpn ? 'The tunnel changed - tap Check to see the new exit.' : 'No VPN right now.';
   ST = st;
   renderBanner(st); renderRoute(st); renderStats(st); renderTunnel(st);
   renderProtection(st); renderSet(st); renderDevices(st); renderSettings(st);
@@ -708,7 +744,7 @@ function copyDiag() {
 }
 function fallbackCopy(t, done) {
   const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed — select the text by hand', 'err'); }
+  try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed - select the text by hand', 'err'); }
   ta.remove();
 }
 
@@ -725,7 +761,7 @@ async function checkExit() {
   EXIT.ip = r.ip; EXIT.via = r.via || ''; EXIT.cleared = false;
   $('exit-ip').textContent = r.ip; $('exit-ip').className = 'glitch';
   const place = [r.city, r.country].filter(Boolean).join(', ');
-  $('exit-sub').textContent = [place, r.isp].filter(Boolean).join(' — ') + (r.via ? ` · through ${r.via}` : ' · no VPN: this is your own connection');
+  $('exit-sub').textContent = [place, r.isp].filter(Boolean).join(' - ') + (r.via ? ` · through ${r.via}` : ' · no VPN: this is your own connection');
   renderRoute(ST);
 }
 

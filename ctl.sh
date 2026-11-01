@@ -41,6 +41,7 @@ cmd_status() {
   echo "ipset=$(sibling_state ipset_arm64 ipset-arm64)"
   echo "wgshield=$(sibling_state wg-shield)"
   echo "ipset_forward=$([ "$(_jcount "$S_F" FORWARD IPSA_FWD)" -gt 0 ] && echo 1 || echo 0)"
+  lanc_keys
   echo "clients=$(vhs_clients | grep -c .)"
   echo "ok=1"
   unset _since _ss _wp _tk _mp _ma _p _ew _en _v
@@ -68,6 +69,7 @@ cmd_poll() {
   echo "ipset=$(sibling_state ipset_arm64 ipset-arm64)"
   echo "wgshield=$(sibling_state wg-shield)"
   echo "wgshield_state=$(sed -n 's/^state=//p' "$(wgs_status_file)" 2>/dev/null | head -n 1)"
+  lanc_keys
   _ti=""
   for _e in $(sed -n 's/^tethers=//p' "$STATUS_FILE" 2>/dev/null); do _ti="$_ti ${_e%%=*}"; done
   # shellcheck disable=SC2086
