@@ -152,9 +152,9 @@
     <tr><th>setting</th><th></th></tr>
     <tr><td>Route through VPN</td><td>Master switch. Off removes every rule at once.</td></tr>
     <tr><td>Kill switch</td><td>On (default): no VPN → no internet for devices. Off: no VPN → devices use your connection directly.</td></tr>
-    <tr><td>Detect a dead tunnel</td><td>On (default): if the phone keeps sending into the VPN for 20 s and nothing comes back, the module pings 1.1.1.1 / 9.9.9.9 through the tunnel. No answer → the VPN counts as down (kill switch on: devices blocked; off: devices use your connection) until it answers again. Catches a VPN that is "connected" but dead, e.g. after switching from Wi-Fi to mobile data.</td></tr>
+    <tr><td>Detect a dead tunnel</td><td>On (default): if the phone keeps sending into the VPN for 20 s and nothing comes back, the module pings 1.1.1.1 / 8.8.8.8 through the tunnel. No answer → the VPN counts as down (kill switch on: devices blocked; off: devices use your connection) until it answers again. Catches a VPN that is "connected" but dead, e.g. after switching from Wi-Fi to mobile data.</td></tr>
     <tr><td>VPN interface</td><td>Auto (default) follows the VPN Android has connected. Choose a name only when two VPNs run at once.</td></tr>
-    <tr><td>DNS fallback</td><td>Only used when no local resolver handles DNS (DNSCrypt Proxy missing or paused). Default Quad9 <code>9.9.9.9</code>, always reached through the tunnel.</td></tr>
+    <tr><td>DNS fallback</td><td>Only used when no local resolver handles DNS (DNSCrypt Proxy missing or paused). Default Cloudflare <code>1.1.1.1</code> (or Google <code>8.8.8.8</code>, or any IPv4 address), always reached through the tunnel.</td></tr>
   </table></div>
   <p><strong>Check now</strong> compares the rules with what should be there and repairs. <strong>Rebuild</strong> puts everything back from scratch. <strong>Report</strong> collects the state, all rules and the log in one text you can copy.</p>
 </div>
@@ -185,7 +185,7 @@
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh status'
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0'
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 9.9.9.9'
+su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 1.1.1.1'
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh clients'
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh exitip'
 su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync'   <span class="cm"># check now</span>

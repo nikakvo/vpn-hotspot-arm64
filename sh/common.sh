@@ -54,7 +54,7 @@ SETTLE_MAX=10
 NETD_WAIT=6
 NETD_BUSY_FILE="$STATE_DIR/netd_busy"
 # Tunnel health: sending through the VPN for this long without receiving
-# anything makes the watchdog probe it (ping 1.1.1.1 / 9.9.9.9 through the
+# anything makes the watchdog probe it (ping 1.1.1.1 / 8.8.8.8 through the
 # interface). A tunnel that does not answer counts as down: kill switch on
 # -> clients blocked, off -> clients use the normal uplink.
 TUNNEL_SILENT=20
@@ -92,7 +92,7 @@ conf_default() {
     KILL_SWITCH) echo 1 ;;
     TUNNEL_CHECK) echo 1 ;;
     VPN_IFACE) echo auto ;;
-    FALLBACK_DNS) echo 9.9.9.9 ;;
+    FALLBACK_DNS) echo 1.1.1.1 ;;
   esac
 }
 
@@ -149,10 +149,21 @@ conf_init() {
 
 # ── Logging ──────────────────────────────────────────────────────────────────
 _ts() { date '+%Y-%m-%d %H:%M:%S'; }
-log_info()  { echo "$(_ts) [INFO] $*"  >> "$LOG"; }
+# The phone is shutting down or rebooting: Android sets
+# sys.shutdown.requested when a normal shutdown starts and sys.powerctl at
+# its very end (a plain "reboot" command sets only sys.powerctl).
+shutting_down() {
+  [ -n "$(getprop sys.shutdown.requested 2>/dev/null)" ] ||
+    [ -n "$(getprop sys.powerctl 2>/dev/null)" ]
+}
+# The watchdog sets QUIET_ON_SHUTDOWN=1: a rebuild that runs while Android
+# takes tethering and the firewall apart fails ("iptables-restore failed"),
+# and that is not worth a line in the log.
+_log_quiet() { [ "${QUIET_ON_SHUTDOWN:-0}" = 1 ] && shutting_down; }
+log_info()  { _log_quiet && return 0; echo "$(_ts) [INFO] $*"  >> "$LOG"; }
 # (logs/ is created at boot by post-fs-data and by the installer)
-log_warn()  { echo "$(_ts) [WARN] $*"  >> "$LOG"; }
-log_error() { echo "$(_ts) [ERROR] $*" >> "$LOG"; }
+log_warn()  { _log_quiet && return 0; echo "$(_ts) [WARN] $*"  >> "$LOG"; }
+log_error() { _log_quiet && return 0; echo "$(_ts) [ERROR] $*" >> "$LOG"; }
 
 # Keep the last 1000 lines. Runs at boot and every few minutes in the
 # watchdog (the log used to be trimmed only at boot and grew until the next
@@ -528,7 +539,7 @@ wgs_direct() {
 
 # ── Tunnel health ────────────────────────────────────────────────────────────
 _tun_probe() { # <iface>: any answer through the tunnel
-  for _pt in 1.1.1.1 9.9.9.9; do
+  for _pt in 1.1.1.1 8.8.8.8; do
     ping -c 1 -W 2 -I "$1" "$_pt" >/dev/null 2>&1 && { unset _pt; return 0; }
   done
   unset _pt

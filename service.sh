@@ -120,8 +120,13 @@ _settle() {
   unset _s0 _sp
 }
 
+# 1.0-r17: quiet and gone while the phone shuts down (see shutting_down)
+QUIET_ON_SHUTDOWN=1
 while :; do
   WAKE=0; NOW=0
+  if shutting_down; then
+    QUIET_ON_SHUTDOWN=0; log_info "watchdog: system shutting down, stopping"; exit 0
+  fi
   vhs_sync
   _src=$?
   date +%s > "$TICK_FILE"

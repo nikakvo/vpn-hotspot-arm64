@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/ARM64-only-fcee0a?style=flat-square" />
-  <img src="https://img.shields.io/badge/v1.0--r16-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/v1.0--r17-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/SukiSU%20%2F%20KernelSU%20%2F%20Magisk-compatible-brightgreen?style=flat-square" />
   <img src="https://img.shields.io/badge/WebUI-built%20in-fcee0a?style=flat-square" />
 </p>
@@ -118,7 +118,7 @@ The dashboard reads only what the watchdog already wrote - opening it costs noth
 | `KILL_SWITCH` | `1` | No VPN → devices blocked (`0`: they use your connection) |
 | `TUNNEL_CHECK` | `1` | Sending 20 s with nothing coming back → one ping through the tunnel; no answer = VPN down |
 | `VPN_IFACE` | `auto` | WG Shield's tunnel when it is up, else Android's VPN - or a fixed interface name when two VPNs run |
-| `FALLBACK_DNS` | `9.9.9.9` | Devices' DNS through the tunnel when no local resolver takes it |
+| `FALLBACK_DNS` | `1.1.1.1` | Devices' DNS through the tunnel when no local resolver takes it |
 
 ---
 
@@ -148,7 +148,7 @@ internet
 - **WG Shield** - its tunnel carries hotspot devices while it is up; when you turn it off or pause it they go direct like the phone, when it fails the kill switch holds
 - **LAN Cloak** - hides the phone itself on the Wi-Fi it joins; hotspot devices are not covered, and the two modules never touch each other's rules. This module's WebUI shows its state
 - **VPN apps stay happy** - none of the modules holds Android's firewall lock while checking, so WireGuard (`wg-quick`) and other VPN apps connect and disconnect without errors
-- **On its own** it sends hotspot devices through the VPN with the kill switch; their DNS goes to a fallback server (Quad9) through the tunnel, without blocklists.
+- **On its own** it sends hotspot devices through the VPN with the kill switch; their DNS goes to a fallback server (Cloudflare `1.1.1.1` by default) through the tunnel, without blocklists.
 
 **Tested together** on a Poco F6 Pro (vermeer), Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU) (SukiSU Ultra), with WG Shield, WireGuard (kernel backend) and v2rayNG; hotspot devices: a Windows laptop and a stock Android phone. Other devices should work but are not tested - reports welcome.
 

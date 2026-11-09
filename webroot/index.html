@@ -331,8 +331,8 @@
       <div class="section-title"><span class="s-accent"></span>Client DNS fallback</div>
       <div class="note" style="margin-top:0">Used only when no local resolver takes the DNS (DNSCrypt missing or paused). Devices' DNS then goes to this server <b>through the tunnel</b>.</div>
       <div class="seg" id="dns-seg">
-        <button data-v="9.9.9.9" onclick="setDns('9.9.9.9')">Quad9</button>
         <button data-v="1.1.1.1" onclick="setDns('1.1.1.1')">Cloudflare</button>
+        <button data-v="8.8.8.8" onclick="setDns('8.8.8.8')">Google</button>
         <button data-v="custom" onclick="dnsCustom()">Other</button>
       </div>
       <div class="inrow hidden" id="dns-row">
@@ -579,7 +579,7 @@ function renderSet(st) {
     return `<div class="row sib ${cls}"><div class="rn"><b>${name}</b><span>${txt}</span></div>${pill}</div>`;
   };
   $('set-body').innerHTML =
-    sib('dnsc', 'DNSCrypt Proxy', dn, st.dnscrypt_hotspot === '1' || st.local_dns === '1', 'Encrypts and filters devices\' DNS; its queries go through this tunnel.', `Devices' DNS goes to ${esc(st.set_FALLBACK_DNS || '9.9.9.9')} through the tunnel instead.`) +
+    sib('dnsc', 'DNSCrypt Proxy', dn, st.dnscrypt_hotspot === '1' || st.local_dns === '1', 'Encrypts and filters devices\' DNS; its queries go through this tunnel.', `Devices' DNS goes to ${esc(st.set_FALLBACK_DNS || '1.1.1.1')} through the tunnel instead.`) +
     sib('ipset', 'ipset', ip, st.ipset_forward === '1', 'Blocks listed IP ranges for devices before they reach the tunnel.', 'No IP blocklists for devices.') +
     sib('wgs', 'WG Shield', st.wgshield, st.vpn_source === 'wg-shield', 'Its tunnel (' + esc(st.wgs_tunnel) + ') carries the devices; switching its server needs nothing here.', 'Kernel WireGuard without an app - used automatically when its tunnel is up.')
       .replace('<span class="pill warn">not filtering</span>', st.wgshield === 'enabled' && st.vpn_source !== 'wg-shield' ? `<span class="pill skip">${esc(st.wgshield_state || 'off')}</span>` : '<span class="pill warn">not filtering</span>')
@@ -657,7 +657,7 @@ function renderSettings(st) {
     $('vif-row').classList.toggle('hidden', vif === 'auto');
     if (vif !== 'auto' && document.activeElement !== $('vif-in')) $('vif-in').value = vif;
   }
-  const fb = st.set_FALLBACK_DNS || '9.9.9.9', known = fb === '9.9.9.9' || fb === '1.1.1.1';
+  const fb = st.set_FALLBACK_DNS || '1.1.1.1', known = fb === '1.1.1.1' || fb === '8.8.8.8';
   if (!DNS_EDIT) {
     document.querySelectorAll('#dns-seg button').forEach(b => b.classList.toggle('on', known ? b.dataset.v === fb : b.dataset.v === 'custom'));
     $('dns-row').classList.toggle('hidden', known);
@@ -724,7 +724,7 @@ function dnsCustom() {
   $('dns-row').classList.remove('hidden'); $('dns-in').focus();
 }
 async function setDns(v) {
-  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(v) || v.split('.').some(o => +o > 255)) { toast('Enter an IPv4 address, e.g. 9.9.9.9', 'err'); return; }
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(v) || v.split('.').some(o => +o > 255)) { toast('Enter an IPv4 address, e.g. 1.1.1.1', 'err'); return; }
   if (await setKey('FALLBACK_DNS', v)) DNS_EDIT = false;
 }
 async function doSync(force) {
@@ -811,6 +811,24 @@ function drawLog() {
   setInterval(poll, 4000);
   setInterval(() => { if (currentTab === 'log' && !document.hidden) loadLog(); }, 6000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+})();
+
+// Keep a text field visible when the on-screen keyboard opens: the WebView
+// gets shorter, but the tab's scroll position stays, so a field near the
+// bottom (DNS fallback "Other", VPN interface) ended up under the keyboard.
+(function () {
+  let t = 0;
+  function keep() {
+    const el = document.activeElement;
+    if (!el || !/^(INPUT|TEXTAREA)$/.test(el.tagName)) return;
+    const r = el.getBoundingClientRect(), h = window.visualViewport ? visualViewport.height : window.innerHeight;
+    if (r.top >= 8 && r.bottom <= h - 8) return;
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) { el.scrollIntoView(false); }
+  }
+  function later(ms) { clearTimeout(t); t = setTimeout(keep, ms); }
+  window.addEventListener('resize', () => later(120));
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => later(120));
+  document.addEventListener('focusin', e => { if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) later(400); });
 })();
 </script>
 </body>

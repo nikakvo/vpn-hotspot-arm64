@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0-r17
+
+No more Quad9, and quiet reboots.
+
+* **Client DNS fallback is Cloudflare `1.1.1.1` by default** (was Quad9 `9.9.9.9`) - Quad9 stops answering in some countries (France from 24 November 2026). The fallback is used only when no local resolver takes the DNS (DNSCrypt Proxy missing or paused) and is always reached through the tunnel. An update changes a saved Quad9 address to `1.1.1.1` once (the installer says so); any other address you set stays
+* **WebUI → Settings → Client DNS fallback**: Cloudflare / Google / Other (was Quad9 / Cloudflare / Other)
+* **Detect a dead tunnel** pings 1.1.1.1, then 8.8.8.8 (was 9.9.9.9), still only through the tunnel
+* **No more warnings in the log during a reboot** - a rebuild that ran while Android was taking tethering apart logged *"iptables-restore (IPv4) failed - retrying"*. The watchdog now notices the shutdown, stays quiet and stops
+* **A text field no longer hides under the keyboard** - the DNS fallback *Other* field near the bottom of Settings was covered by the on-screen keyboard; the page now scrolls it into view
+* Help: DNS fallback, dead tunnel check
+
+Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU), with WG Shield 2.8 and DNSCrypt Proxy 2.1.20-r4: hotspot laptop through WG Shield, DNSCrypt Proxy paused (devices' DNS via 1.1.1.1 through the tunnel, Cloudflare in the DNS leak test) and resumed, kill switch while the tunnel did not answer, the Settings field above the keyboard, a reboot with the hotspot on.
+
+---
 ## 1.0-r16
 
 LAN Cloak joins the networking set.

@@ -62,6 +62,16 @@ if [ -f "$CONF" ]; then
 else
   ui_print "- Default settings: kill switch ON, VPN auto-detect"
 fi
+# 1.0-r17: Quad9 stops serving some countries (France from 2026-11-24), so
+# the default fallback is Cloudflare now. A saved Quad9 address (1.0-r16 and
+# older wrote the default into the file) is changed once to the new
+# default; any other address stays as chosen.
+case "$(sed -n 's/^FALLBACK_DNS=//p' "$CONF" 2>/dev/null | tail -n 1)" in
+  9.9.9.9 | 149.112.112.112)
+    conf_set FALLBACK_DNS 1.1.1.1
+    ui_print "- Client DNS fallback: Quad9 -> Cloudflare 1.1.1.1"
+    log_info "installer: client DNS fallback changed from Quad9 to Cloudflare 1.1.1.1" ;;
+esac
 conf_init
 
 # ── The set ──────────────────────────────────────────────────────────────────
