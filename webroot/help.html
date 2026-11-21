@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>VPN Hotspot - Help</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
   <style>
     :root {
       --bg: #000; --bg2: #070600; --surface: #0c0b03; --surface2: #161400;
@@ -34,7 +33,7 @@
     .box h3:first-child { margin-top: 0; }
     .box ul, .box ol { margin: 6px 0 10px 18px; } .box li { margin-bottom: 5px; }
     strong { color: var(--hi); font-weight: 600; }
-    code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 0 5px; word-break: break-all; }
+    code { font-family: var(--mono); font-size: 12px; color: var(--amber); background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 0 5px; overflow-wrap: anywhere; }
     pre { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text); margin: 8px 0; white-space: pre; }
     pre .cm { color: var(--dim); }
     .tw { overflow-x: auto; margin: 6px 0; }
@@ -53,6 +52,42 @@
     .flow .dn { color: var(--dnsc); } .flow .ip { color: var(--ipset); }
     .footer { text-align: center; padding: 28px 16px 8px; font-size: 10px; font-family: var(--mono); color: var(--dim); }
     .footer a { color: var(--acc); text-decoration: none; }
+  
+    /* Commands: mac-style box; COPY copies one command, never its comment */
+    .code-block { --cb: var(--acc); background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 10px 0; }
+    .code-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px 6px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+    .code-label { font-family: var(--mono); font-size: 9.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .code-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .code-dots { display: flex; gap: 4px; }
+    .code-dot { width: 7px; height: 7px; border-radius: 50%; display: block; }
+    .code-dot:nth-child(1) { background: #ff5f57; }
+    .code-dot:nth-child(2) { background: #febc2e; }
+    .code-dot:nth-child(3) { background: #28c840; }
+    .copy-btn { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; background: transparent; border: 1px solid var(--border2); color: var(--cb); border-radius: 4px; padding: 3px 8px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: .05em; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
+    .copy-btn:active { background: var(--surface2); }
+    .copy-btn.copied { color: #28c840; border-color: rgba(40,200,64,.45); }
+    .copy-btn.failed { color: var(--red); border-color: var(--red); }
+    .code-block pre { margin: 0; border: 0; border-radius: 0; background: transparent; padding: 0; white-space: pre-wrap; overflow-wrap: break-word; overflow-x: visible; }
+    .code-body { padding: 10px 12px; }
+    .cmd-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .cmd-row:last-child { border-bottom: 0; }
+    .cmd-main { flex: 1; min-width: 0; }
+    .code-block pre .sub { color: var(--cb); }
+    .cmd-note { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 2px; }
+    /* Back to top */
+    .to-top { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border2); background: var(--surface2); color: var(--acc); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 40; opacity: 0; pointer-events: none; transition: opacity .2s; -webkit-tap-highlight-color: transparent; }
+    .to-top.show { opacity: 1; pointer-events: auto; }
+    /* Tables on a phone: each row stacked, the name on top and its text under it */
+    @media (max-width: 640px) {
+      .tw { overflow-x: visible; }
+      .tw table, .tw tbody, .tw tr, .tw td { display: block; width: 100%; }
+      .tw tr.th-row { display: none; }
+      .tw tr { padding: 9px 0; border-bottom: 1px solid var(--border); }
+      .tw tr:last-child { border-bottom: none; }
+      .tw td { border-bottom: none; padding: 0; }
+      .tw td:first-child { white-space: normal; overflow-wrap: anywhere; padding: 0 0 3px; }
+      .tw table.multi td[data-label]::before { content: attr(data-label) ': '; color: var(--dim); font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+    }
   </style>
 </head>
 <body>
@@ -85,7 +120,7 @@
   <p>Android's VPN protects the apps on your phone only. Devices connected to your <strong>hotspot</strong> (or USB / Bluetooth tethering) are sent straight to your mobile or Wi-Fi connection, around the VPN: a laptop on your hotspot shows your carrier's address, not the VPN's.</p>
   <p>This module sends everything those devices do <strong>through the phone's VPN</strong>. With the kill switch on, they never reach the internet any other way: if the VPN drops, they are cut off until it is back.</p>
   <div class="tw"><table>
-    <tr><th>works with</th><th></th></tr>
+    <tr class="th-row"><th>works with</th><th></th></tr>
     <tr><td>VPN apps</td><td>Any app that uses Android's VPN: root WireGuard (kernel backend) and <code>VpnService</code> apps such as v2rayNG, Proton VPN or OpenVPN. Interface names like <code>tun0</code> or <code>wg-…</code> are followed automatically. Tested on the device: WireGuard (kernel backend) and v2rayNG.</td></tr>
     <tr><td>WG Shield</td><td>The kernel WireGuard module of the same set. Android sees no VPN there, so this module reads WG Shield's status instead and uses its tunnel (<code>wgs0</code>) whenever it is up - also when you switch its server.</td></tr>
     <tr><td>Tethering</td><td>Wi-Fi hotspot, USB, Bluetooth - several at once.</td></tr>
@@ -102,6 +137,7 @@
     <li>On the device, open <code>ipleak.net</code> or a "what is my IP" page: it shows the VPN's address.</li>
     <li>Turn the VPN off for a moment: the device loses internet (kill switch), and gets it back when the VPN reconnects - no action needed.</li>
   </ol>
+  <p>The header buttons <strong>DNS Test</strong> and <strong>Leak Test</strong> test the phone itself. They open in the app set to open that address (usually your browser; Android asks if none is set), not inside the WebUI: a site shown inside the WebUI could reach the root manager's bridge. Back returns to the WebUI. The WebUI itself loads nothing from the internet.</p>
 </div>
 
 <div class="sec-title" id="how">3 · how it works</div>
@@ -124,7 +160,7 @@
 <div class="sec-title" id="states">4 · states and the banner</div>
 <div class="box">
   <div class="tw"><table>
-    <tr><th>state</th><th>meaning</th></tr>
+    <tr class="th-row"><th>state</th><th>meaning</th></tr>
     <tr><td><span class="pill ok">via vpn</span></td><td>Hotspot devices use the VPN. The banner names the interface.</td></tr>
     <tr><td><span class="pill warn">blocked</span></td><td>No VPN, kill switch on: devices have no internet. Connect the VPN.</td></tr>
     <tr><td><span class="pill warn">direct</span></td><td>No VPN and kill switch off - or you turned WG Shield off or paused it: devices use your connection directly, like without the module.</td></tr>
@@ -149,7 +185,7 @@
 <div class="sec-title" id="settings">6 · settings</div>
 <div class="box">
   <div class="tw"><table>
-    <tr><th>setting</th><th></th></tr>
+    <tr class="th-row"><th>setting</th><th></th></tr>
     <tr><td>Route through VPN</td><td>Master switch. Off removes every rule at once.</td></tr>
     <tr><td>Kill switch</td><td>On (default): no VPN → no internet for devices. Off: no VPN → devices use your connection directly.</td></tr>
     <tr><td>Detect a dead tunnel</td><td>On (default): if the phone keeps sending into the VPN for 20 s and nothing comes back, the module pings 1.1.1.1 / 8.8.8.8 through the tunnel. No answer → the VPN counts as down (kill switch on: devices blocked; off: devices use your connection) until it answers again. Catches a VPN that is "connected" but dead, e.g. after switching from Wi-Fi to mobile data.</td></tr>
@@ -181,18 +217,19 @@
 
 <div class="sec-title" id="cli">9 · command line</div>
 <div class="box">
-<pre><span class="cm"># from Termux</span>
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh status'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set KILL_SWITCH 0'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set VPN_IFACE auto'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh set FALLBACK_DNS 1.1.1.1'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh clients'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh exitip'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync'   <span class="cm"># check now</span>
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh sync force'   <span class="cm"># rebuild</span>
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh log 100'
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh log clear'   <span class="cm"># empty the log</span>
-su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   <span class="cm"># full report</span></pre>
+<div class="code-block"><div class="code-header"><span class="code-label">From Termux</span><div class="code-header-right"><div class="code-dots"><span class="code-dot"></span><span class="code-dot"></span><span class="code-dot"></span></div></div></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">status</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">set KILL_SWITCH 0</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">set VPN_IFACE auto</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">set FALLBACK_DNS 1.1.1.1</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">clients</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">exitip</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">sync</span>'</pre><div class="cmd-note">check now</div></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">sync force</span>'</pre><div class="cmd-note">rebuild</div></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">log 100</span>'</pre></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">log clear</span>'</pre><div class="cmd-note">empty the log</div></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+<div class="cmd-row"><div class="cmd-main"><pre>su -c '/<wbr>system/<wbr>bin/<wbr>sh /<wbr>data/<wbr>adb/<wbr>modules/<wbr>vpn-hotspot/<wbr>ctl.sh <span class="sub">diag</span>'</pre><div class="cmd-note">full report</div></div><button class="copy-btn" type="button" onclick="copyCode(this)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY</button></div>
+</div>
 </div>
 
 <div class="sec-title" id="trouble">10 · troubleshooting</div>
@@ -216,7 +253,7 @@ su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   <span class="
 <div class="sec-title" id="files">11 · files, update, uninstall</div>
 <div class="box">
   <div class="tw"><table>
-    <tr><th>file</th><th></th></tr>
+    <tr class="th-row"><th>file</th><th></th></tr>
     <tr><td>/data/adb/vpn-hotspot/</td><td>Everything the module keeps, in one folder:</td></tr>
     <tr><td>settings.conf</td><td>Settings (kept on update)</td></tr>
     <tr><td>last-source</td><td>Which VPN the devices used last (WG Shield or an app) - kept across reboots</td></tr>
@@ -229,8 +266,63 @@ su -c '/system/bin/sh /data/adb/modules/vpn-hotspot/ctl.sh diag'   <span class="
 
 <div class="footer">VPN Hotspot Arm64 · by Tears Burn · <a href="index.html">back to dashboard</a></div>
 
+<button class="to-top" id="toTop" type="button" onclick="toTop()" aria-label="Back to top"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg></button>
 <script>
-function goBack() { if (history.length > 1) history.back(); else location.href = 'index.html'; }
+// history.back() is right when the user came from index.html. After a tap in
+// the contents it only goes to the previous #section (same page, no pagehide),
+// and some managers open a webroot file directly with no history at all: in
+// both cases nothing has left this page after 300 ms, so go to index.html.
+function goBack() {
+  var left = false;
+  window.addEventListener('pagehide', function () { left = true; });
+  if (window.history.length > 1) {
+    window.history.back();
+    setTimeout(function () { if (!left) window.location.href = 'index.html'; }, 300);
+  } else {
+    window.location.href = 'index.html';
+  }
+}
+
+  // ── Copy a command (comments are not copied) ──
+  var ICON_COPY = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>COPY';
+  function codeText(pre) {
+    var c = pre.cloneNode(true);
+    c.querySelectorAll('.cm').forEach(function (n) { n.remove(); });
+    return c.textContent.replace(/\s+$/, '').replace(/^\s+/, '');
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.top = '-1000px';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copyCode(btn) {
+    var box = btn.closest('.cmd-row') || btn.closest('.code-block');
+    var text = codeText(box.querySelector('pre'));
+    function done(ok) {
+      btn.classList.add(ok ? 'copied' : 'failed');
+      btn.textContent = ok ? 'COPIED' : 'FAILED';
+      setTimeout(function () { btn.classList.remove('copied', 'failed'); btn.innerHTML = ICON_COPY; }, 1600);
+    }
+    // The WebView of some root managers has no navigator.clipboard, or rejects it.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(fallbackCopy(text)); });
+    } else {
+      done(fallbackCopy(text));
+    }
+  }
+  // ── Back to top ──
+  function toTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  (function () {
+    var b = document.getElementById('toTop');
+    function upd() { b.classList.toggle('show', (window.scrollY || document.documentElement.scrollTop) > 400); }
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  })();
 </script>
 </body>
 </html>

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0-r18
+
+Outside links open in your browser, and the WebUI loads nothing from the internet.
+
+* **Outside links open in your browser instead of inside the WebUI, where a site could reach the root manager's bridge (it runs commands as root)**: DNS Test and Leak Test. They open in the app set to open that address (usually your browser); Back returns to the WebUI, still open
+* **The WebUI and Help load nothing from the internet** - the Google web font is gone (it sent a request to Google on every open); the text uses the phone's own monospace font
+* **Help reads better on the phone** - table rows are stacked (the name on top, its text under it at full width, no more sideways scrolling), every example command sits in a box with its own **COPY** button (only that one command is copied, never its comment), and an arrow at the bottom right jumps back to the top
+* **Help ‹ BACK returns to the dashboard** also after a jump through the contents (it went back only to the top of Help)
+* The module's scripts are unchanged
+
+Tested on Poco F6 Pro, Xiaomi.eu ROM (HyperOS 3, Android 16), kernel [GKI_Kernel_SukiSU](https://github.com/nikakvo/GKI_Kernel_SukiSU): DNS Test and Leak Test open in Chrome and Back returns to the WebUI, no request to Google when the WebUI opens.
+
+---
 ## 1.0-r17
 
 No more Quad9, and quiet reboots.

@@ -4,8 +4,6 @@
   <title>VPN Hotspot</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <!-- Non-blocking font: the page must work with no internet at all -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" media="print" onload="this.media='all'">
   <style>
     /* Same house style as DNSCrypt Proxy Arm64 and ipset-arm64 (one set);
        this module's own colour is neon yellow (cyberpunk), warnings orange.
@@ -212,8 +210,8 @@
     <div id="clock">--:--:--</div>
   </div>
   <div class="btn-grid">
-    <a class="button clip" href="https://www.dnsleaktest.com/" target="_blank">DNS Test</a>
-    <a class="button clip" href="https://ipleak.net/" target="_blank">Leak Test</a>
+    <a class="button clip" href="#" data-ext="https://www.dnsleaktest.com/">DNS Test</a>
+    <a class="button clip" href="#" data-ext="https://ipleak.net/">Leak Test</a>
     <a class="button alt clip" href="help.html">Help</a>
   </div>
 </header>
@@ -433,6 +431,38 @@ async function sh(cmd, timeoutMs) {
   const res = EXEC_MODE === 'callback' ? await callbackExec(wrapped, timeoutMs) : legacyExec(wrapped);
   return b64ToText((res.stdout || '').trim());
 }
+
+// ── Outside sites open in the phone's browser ───────────────────────────
+// The root manager would load a link in this WebView, where the site's
+// scripts could reach ksu.exec. am start hands it to the default browser.
+async function openExt(url) {
+  if (!/^https:\/\/[a-z0-9.-]+\/[a-z0-9._\/-]*$/i.test(url)) { toast('Not opened: not an https address', 'err'); return false; }
+  const cmd = `am start -a android.intent.action.VIEW -d '${url}' 2>&1`;
+  const fail = m => { toast('Could not open the browser: ' + m, 'err'); return false; };
+  let r;
+  try {
+    if (!hasBridge()) return fail('no root bridge');
+    if (EXEC_MODE === 'legacy') r = legacyExec(cmd);
+    else {
+      try { r = await callbackExec(cmd, 15000); }
+      catch (e) {
+        if (/timeout/.test(String(e && e.message))) return true;
+        if (EXEC_MODE === 'callback') throw e;
+        r = legacyExec(cmd);
+      }
+    }
+  } catch (e) { return fail(String((e && e.message) || e)); }
+  const out = (r.stdout || '') + (r.stderr || '');
+  const err = out.split('\n').find(l => /^Error/.test(l));
+  if (r.errno !== 0 || err) return fail(err || 'am start ended with ' + r.errno);
+  return true;
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[data-ext]');
+  if (!a) return;
+  e.preventDefault();
+  openExt(a.getAttribute('data-ext'));
+});
 
 // ── One action at a time, with visible feedback ─────────────────────────
 let _pressed = null, _pressedAt = 0, _busyN = 0, _fgEndedAt = 0;
