@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0-r19
+
+One phone Back leaves Help.
+
+* **One phone Back leaves Help** - the contents and the links to other sections no longer add steps to the phone's Back, however many sections you opened
+* The module's scripts are unchanged
+
+---
+
 ## 1.0-r18
 
 Outside links open in your browser, and the WebUI loads nothing from the internet.
